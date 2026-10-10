@@ -34,47 +34,60 @@
 
 ```
 csu_database-master/
-├── backend/                      # Flask 后端（保留，作为对照实现）
-│   ├── app.py                    # 路由与业务逻辑（约 30 个接口）
-│   ├── auth.py                   # JWT 生成与解析
-│   ├── config.py                 # 数据库 / Redis 配置（支持环境变量）
-│   ├── db/init.sql               # MySQL 容器初始化脚本（建库建表 + 数据）
-│   ├── Dockerfile                # 后端镜像
-│   ├── docker-compose.yml        # MySQL + Redis + Backend 编排
-│   ├── wait-for-mysql.sh         # 等待 MySQL 就绪后启动服务
-│   └── requirements.txt          # Python 依赖
-├── backend-java/                 # Java 后端（Spring Boot 3，与 Flask 契约兼容）
-│   ├── pom.xml                   # Maven 单模块
-│   ├── Dockerfile                # 多阶段构建镜像
-│   ├── docker-compose.yml        # MySQL 3307 / Redis 6379 / API 5000
-│   ├── docker/wait-for-mysql.sh  # 容器内等待 MySQL 就绪
-│   ├── tools/build.ps1           # 一键构建脚本
-│   └── src/main/java/com/csu/takeout/   # controller / service / mapper / entity / ...
-├── tools/                        # 验收与运维脚本（Java 版新增）
-│   ├── compare_api.ps1           # Flask 与 Spring Boot 的逐接口响应对照
-│   └── seed_test_accounts.sql    # 幂等补齐测试账号 CMX / YCX
-├── docs/RUNBOOK.md               # 从零运行手册（环境、启动、验收、演示、排查）
-├── frontend/sjk/                 # Vue 前端
-│   └── src/
-│       ├── api/index.js          # Axios 封装（自动携带 token）
-│       ├── router/index.js       # 路由：/login /user /manage
-│       └── components/
-│           ├── MyLogReg.vue      # 登录注册
-│           ├── MyUser.vue        # 用户主界面
-│           │   ├── UserShop.vue              # 店铺浏览与下单
-│           │   ├── UserOrder/                # UserUnsend / UserSending / UserFinished
-│           │   └── UserMsg/                  # IndiMsg（个人信息：查看 / 编辑资料 / 改密码弹窗）
-│           └── MyManage.vue      # 管理主界面
-│               ├── ManageShop.vue / ManageServer.vue / ManageDispatcher.vue
-│               ├── ManageOrder/              # UnSend / BeSending / BeSended
-│               └── ManageWuliu/              # WuliuUnended / WuliuEnded
-├── database/caimingxuan.sql      # 数据库完整导出（表、视图、触发器、数据）
-├── other_database/               # 迁移后的 MariaDB / PostgreSQL 导出
-├── mysql2mariadb_datax_json/     # MySQL → MariaDB 的 DataX 任务配置（8 张表）
-├── mysql2postgresql_datax_json/  # MySQL → PostgreSQL 的 DataX 任务配置（8 张表）
-├── docker Containers/            # 各数据库容器的 docker run 命令记录
-├── ppt&labreport/                # 课程设计实验报告与汇报 PPT
-└── start_project.bat             # Windows 一键启动脚本
+├── backend/                          # Flask 后端（保留作对照实现，响应与 Java 版逐字节一致）
+│   ├── app.py                        # 全部路由与业务逻辑（约 30 个接口）
+│   ├── auth.py                       # JWT 生成与解析（PyJWT / HS256 / issuer=wufang）
+│   ├── config.py                     # 数据库 / Redis 配置（支持环境变量覆盖）
+│   ├── db/init.sql                   # 容器初始化：8 张表 + 2 个视图 + 6 个触发器 + 示例数据
+│   ├── Dockerfile                    # python:3.10-slim 镜像
+│   ├── docker-compose.yml            # MySQL + Redis + Flask 后端编排
+│   ├── wait-for-mysql.sh             # 等待 MySQL 就绪后启动服务
+│   ├── requirements.txt              # Python 依赖（Flask 2.3 / SQLAlchemy / PyMySQL / PyJWT / redis）
+│   └── main.py                       # PyCharm 自动生成的示例文件，未使用（可删）
+├── backend-java/                     # Java 后端（Spring Boot 3.4.4，主后端；与 Flask 版逐字节兼容）
+│   ├── src/main/java/com/csu/takeout/
+│   │   ├── controller/user、manager/ # 接口层：登录 / 订单 / 个人信息；店铺 / 服务员 / 配送员 / 物流 / 数据统计
+│   │   ├── service(+impl) / mapper/  # 业务层与 MyBatis 持久层（SQL 全部在 resources/mapper/*.xml）
+│   │   ├── json/                     # Flask 兼容 JSON 序列化器（空格排版、末尾换行、非 ASCII 转义）
+│   │   ├── interceptor/ context/     # JWT 拦截器（请求头 token）+ ThreadLocal 当前用户
+│   │   └── entity / dto / vo / result / handler / config / constant / utils
+│   ├── src/main/resources/           # application.yml（默认 localhost:3307）+ mapper XML
+│   ├── src/test/                     # 82 个接口契约测试（H2 MySQL 兼容模式，无需 Docker）
+│   ├── tools/build.ps1               # 一键构建（用可写 Maven 仓库副本，受限环境可跑）
+│   ├── tools/verify-wait-probe.sh    # 验证「端口就绪探测」行为的辅助脚本
+│   ├── Dockerfile                    # 多阶段构建（maven → JRE 17）
+│   ├── docker-compose.yml            # MySQL 3307 / Redis 6379 / API 5000
+│   └── docker/wait-for-mysql.sh      # 容器内等待 MySQL 就绪（bash /dev/tcp + timeout）
+├── frontend/sjk/                     # Vue 2.6 + Element UI + ECharts 5 前端
+│   ├── src/api/index.js              # Axios 封装（自动携带 token）+ statsApi（看板 8 个接口）
+│   ├── src/router/index.js           # 路由 /login /user /manage；meta.title 驱动标签页标题
+│   ├── src/app.js                    # 应用装配（Element UI、主题、Vue.prototype.$axios）
+│   ├── src/assets/styles/theme.css   # 设计 token（配色 / 圆角 / 断点）
+│   ├── src/charts/echarts.js         # ECharts 按需注册 + campus-amber 主题 + 数字格式化
+│   ├── src/mixins/listPager.js       # 列表页「关键字筛选 + 前端分页」混入（接口仍全量返回）
+│   ├── src/utils/format.js           # 展示格式化 + ORDER_STATUS 状态文案/配色（唯一事实来源）
+│   ├── src/components/common/        # AppShell / PagePanel / ChartCard / BaseChart / StatusTag
+│   ├── src/components/ManageStats/   # 数据看板 8 个面板（KPI、双轴趋势、状态环、店铺榜+下钻…）
+│   ├── src/components/               # MyLogReg / MyUser / MyManage / UserShop / 各订单与门店管理页
+│   ├── scripts/check-theme-tokens.js # 校验 CSS 变量定义与引用一致（防模板引用了不存在的变量）
+│   └── vue.config.js / package.json
+├── docs/                             # 项目文档
+│   ├── RUNBOOK.md                    # 从零运行手册（环境 / 启动 / 验收 / 演示 / 排查表）
+│   ├── DESIGN-STATS-DASHBOARD.md     # 数据看板设计说明（口径、组件划分、交互）
+│   └── preview/                      # 11 张页面截图（README 与文档引用）
+├── tools/                            # 根级验收与数据脚本
+│   ├── compare_api.ps1               # Flask ↔ Spring Boot 逐接口响应对照脚本
+│   ├── seed_test_accounts.sql        # 幂等补齐测试账号 CMX / YCX
+│   ├── gen_seed_demo_stats.ps1       # 生成「统计看板演示数据」SQL 的脚本（近 N 天批量订单）
+│   └── seed_demo_stats.sql           # 生成结果（纯 INSERT + UPDATE，可直接执行）
+├── database/caimingxuan.sql          # 数据库完整导出（表、视图、触发器、数据）
+├── other_database/                   # 迁移后的 MariaDB / PostgreSQL 导出（PG 版含 plpgsql 触发器）
+├── mysql2mariadb_datax_json/         # MySQL → MariaDB 的 DataX 任务配置（8 张表，凭据加密）
+├── mysql2postgresql_datax_json/      # MySQL → PostgreSQL 的 DataX 任务配置（8 张表）
+├── docker Containers/                # 各数据库容器的 docker run 命令记录（MySQL/Redis/MariaDB/PG）
+├── ppt&labreport/                    # 课程设计实验报告与汇报 PPT
+├── start_project.bat                 # Windows 一键启动（建卷 → 起容器 → 补账号 → 起前端）
+└── .gitignore                        # 忽略 node_modules / target / dist / 日志 / .idea
 ```
 
 ## 快速开始
