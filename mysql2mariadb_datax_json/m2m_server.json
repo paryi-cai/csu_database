@@ -1,0 +1,64 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 3
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "mysqlreader",
+          "parameter": {
+            "username": "yRjwDFuoPKlqya9h9H2Amg==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "`service_id`",
+              "`service_name`",
+              "`fastfood_shop_name`"
+            ],
+            "splitPk": "",
+            "connection": [
+              {
+                "table": [
+                  "server"
+                ],
+                "jdbcUrl": [
+                  "jdbc:mysql://localhost:3307/caimingxuan"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "mysqlwriter",
+          "parameter": {
+            "username": "yRjwDFuoPKlqya9h9H2Amg==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "`service_id`",
+              "`service_name`",
+              "`fastfood_shop_name`"
+            ],
+            "writeMode": "replace",
+            "preSql": [
+              "TRUNCATE TABLE server"
+            ],
+            "connection": [
+              {
+                "table": [
+                  "server"
+                ],
+                "jdbcUrl": "jdbc:mysql://localhost:3308/testdb"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

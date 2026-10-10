@@ -1,0 +1,68 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 3
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "mysqlreader",
+          "parameter": {
+            "username": "yRjwDFuoPKlqya9h9H2Amg==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "`id`",
+              "`username`",
+              "`password`",
+              "`telephone`",
+              "`role`"
+            ],
+            "splitPk": "",
+            "connection": [
+              {
+                "table": [
+                  "user"
+                ],
+                "jdbcUrl": [
+                  "jdbc:mysql://localhost:3307/caimingxuan"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "mysqlwriter",
+          "parameter": {
+            "username": "yRjwDFuoPKlqya9h9H2Amg==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "`id`",
+              "`username`",
+              "`password`",
+              "`telephone`",
+              "`role`"
+            ],
+            "writeMode": "replace",
+            "preSql": [
+              "DELETE FROM user"
+            ],
+            "connection": [
+              {
+                "table": [
+                  "user"
+                ],
+                "jdbcUrl": "jdbc:mysql://localhost:3308/testdb"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

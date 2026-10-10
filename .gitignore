@@ -1,0 +1,12 @@
+# 对照脚本的输出目录（每次运行生成 compare-*.json）
+tools/compare-results/
+
+# 构建日志
+**/.build.log
+**/.build.log.err
+**/*.log
+
+# IDE（backend/ 下的 .idea 没有自己的 .gitignore，这里兜底；backend-java 已有各自的忽略）
+.idea/
+**/*.iml
+

@@ -1,0 +1,36 @@
+# 仅用于本地接口契约回归测试（mvn test），生产运行不加载本文件。
+# 使用 H2 的 MySQL 兼容模式，使开发机没有 MySQL / Docker 时也能验证接口。
+# H2 依赖为 test scope，不会进入可执行 jar。
+spring:
+  datasource:
+    druid:
+      driver-class-name: org.h2.Driver
+      # 库名带随机后缀：@DirtiesContext 会让 Spring 重建上下文并重跑 schema/data 脚本，
+      # 若库名固定（DB_CLOSE_DELAY=-1 使内存库在 JVM 内长期存活），重跑必然撞主键、
+      # 表现为"上下文重建后数据没复位"。改成每个上下文一个新库，初始化即可干净重放。
+      url: jdbc:h2:mem:csu_takeout_test_${random.uuid};MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
+      username: sa
+      password: ""
+      initial-size: 1
+      min-idle: 1
+      max-active: 4
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:testdb/schema.sql
+      data-locations: classpath:testdb/data.sql
+      # 触发器等对象体内部含有分号，Spring 默认按分号切分语句会把它们截断；
+      # 因此这两个测试脚本统一使用 @@ 作为语句分隔符。
+      separator: "@@"
+
+# 测试环境不依赖 Redis（RedisAutoConfiguration 的连接是惰性的，不会被触发）
+csu:
+  jwt:
+    secret-key: 12asdffa2323
+    ttl: 86400000
+    token-name: token
+    issuer: wufang
+
+logging:
+  level:
+    com.csu.takeout: info

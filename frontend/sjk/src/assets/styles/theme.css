@@ -1,0 +1,502 @@
+/* ============================================================================
+ * 校园快餐订餐管理系统 —— 全局设计 token 与基础样式
+ * ----------------------------------------------------------------------------
+ * 主题名：暖食琥珀 × 学院米白
+ *   主色取琥珀橙 #E8622C：暖色系给"吃"以食欲暗示，但比正橙/正红克制，
+ *   长时间盯盘不刺眼；侧边栏用墨蓝 #2A3B4C 而非纯黑，压住暖色避免整体发飘；
+ *   页面底色用米白 #F6F4F0 而非冷灰，与暖色主色同温，观感统一。
+ *
+ * 约定：
+ *   1. 所有颜色、圆角、阴影一律走本文件的 CSS 变量，业务组件里不写死色值；
+ *   2. **ECharts 的配色以 src/charts/echarts.js 为准**（CANVAS 渲染读不到 CSS 变量，
+ *      必须传具体色值）。主色/墨蓝/语义色这些需要与 DOM 一致的颜色在两处各存一份，
+ *      「哪边是事实来源」按用途定：DOM 样式看本文件，图表看 echarts.js。
+ *      变量名前缀统一为 --csu-*；
+ *   3. 本文件只提供 token 与通用容器类，不写任何具体页面的样式。
+ *
+ * 可用工具核对一致性（会读本文件 + echarts.js 并交叉断言）：
+ *   cd frontend/sjk && npm run check:theme
+ * ========================================================================== */
+
+:root {
+    /* ---------- 品牌主色（琥珀橙） ---------- */
+    --csu-primary: #E8622C;
+    --csu-primary-dark: #C44E1E;
+    --csu-primary-light: #F58A5C;
+    --csu-primary-bg: #FDEDE5;
+    /* 主色浅底上的文字色，保证 WCAG AA 对比度 */
+    --csu-primary-text: #B8431A;
+
+    /* ---------- 结构色（侧边栏 / 顶部条） ---------- */
+    --csu-sidebar: #2A3B4C;
+    --csu-sidebar-hover: #35495D;
+    --csu-sidebar-text: #B9C6D3;
+    --csu-sidebar-title: #7B8C9C;
+    --csu-topbar-bg: #FFFFFF;
+
+    /* ---------- 背景与卡片 ---------- */
+    --csu-bg: #F6F4F0;
+    --csu-panel: #FFFDF9;
+    --csu-panel-alt: #F7F3EC;
+    --csu-header-bg: #F0EBE4;
+    --csu-border: #E8E2D9;
+    --csu-border-light: #F1ECE5;
+
+    /* 主色系描边：用于"浅主色底 + 主色边框"的胶囊/标签（如 --csu-primary-bg 的边框） */
+    --csu-border-primary: #F5C4AE;
+
+    /* ---------- 品牌渐变的浅色端（logo 方块、主按钮高光） ---------- */
+    --csu-primary-gradient-to: #F0904F;
+
+    /* ---------- 空态/占位图标：比 --csu-text-weak 更淡，仅用于无数据的示意图标 ---------- */
+    --csu-icon-empty: #DED6CA;
+
+    /* ---------- 骨架屏（加载占位）的两个灰阶 ---------- */
+    --csu-skeleton-from: #F1ECE5;
+    --csu-skeleton-to: #E8E2D9;
+
+    /* ---------- 文字 ---------- */
+    --csu-text: #26323D;
+    --csu-text-sub: #5C6B7A;
+    --csu-text-weak: #9AA7B4;
+    --csu-text-invert: #FFFFFF;
+
+    /* 深色底（侧栏/登录品牌区）上的次级文字 */
+    --csu-text-on-dark: #C6D2DE;
+    --csu-text-on-dark-dim: #8C9BAC;
+    --csu-text-on-dark-body: #A9B7C6;
+    --csu-sep-on-dark: #C9D2DA;
+
+    /* 登录页左侧品牌区的斜向渐变：从墨蓝过渡到带绿意的深色，再叠一层暖色光斑 */
+    --csu-login-gradient: linear-gradient(150deg, #23313F 0%, #2A3B4C 45%, #3A4A3F 100%);
+
+    /* ---------- 语义色 ---------- */
+    /* 与 charts/echarts.js 的 C 常量保持一致：图表读不到 CSS 变量，
+       所以**配色的事实来源是 echarts.js**，这里只服务于 DOM 样式。
+       新增颜色时先改 echarts.js，再在这里补同名变量。 */
+    --csu-success: #2FA36B;
+    --csu-warning: #E0A020;
+    --csu-danger: #D6453D;
+
+    /* ---------- 圆角 ---------- */
+    --csu-radius-sm: 4px;
+    --csu-radius: 8px;
+
+    /* ---------- 阴影（暖色调，不用纯黑阴影） ---------- */
+    --csu-shadow: 0 1px 3px rgba(42, 59, 76, .06);
+    --csu-shadow-hover: 0 4px 14px rgba(42, 59, 76, .10);
+    --csu-shadow-lg: 0 8px 28px rgba(42, 59, 76, .14);
+
+    /* ---------- 尺寸 ---------- */
+    --csu-topbar-h: 60px;
+    --csu-side-w: 220px;
+    --csu-side-w-collapsed: 64px;
+    --csu-page-pad: 18px;
+
+    /* ---------- 数字字体：等宽，保证表格列/卡片数字不跳动 ---------- */
+    --csu-font-mono: "DIN Alternate", Consolas, "SF Mono", "Roboto Mono", ui-monospace, monospace;
+}
+
+/* ============================================================================
+ * 基础重置
+ * ========================================================================== */
+
+html,
+body,
+#app {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--csu-bg);
+    color: var(--csu-text);
+    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 统一滚动条，避免默认滚动条在暖色底上突兀 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #D5CEC4;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #BFB6A9;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ============================================================================
+ * Element UI 主题覆写
+ * 说明：本项目不引入 scss 主题编译链（只改 CSS 变量 + 类覆盖），
+ *       避免动 vue.config.js 与构建链带来的回归风险。
+ * ========================================================================== */
+
+/* ---------- 主按钮：主色 + 深色 hover ---------- */
+.el-button--primary {
+    background-color: var(--csu-primary);
+    border-color: var(--csu-primary);
+}
+
+.el-button--primary:hover,
+.el-button--primary:focus {
+    background-color: var(--csu-primary-dark);
+    border-color: var(--csu-primary-dark);
+}
+
+.el-button--primary.is-plain {
+    color: var(--csu-primary-text);
+    background: var(--csu-primary-bg);
+    border-color: #F5C4AE;
+}
+
+.el-button--primary.is-plain:hover,
+.el-button--primary.is-plain:focus {
+    background: var(--csu-primary);
+    border-color: var(--csu-primary);
+    color: #fff;
+}
+
+.el-button--text {
+    color: var(--csu-primary-text);
+}
+
+.el-button--text:hover,
+.el-button--text:focus {
+    color: var(--csu-primary);
+}
+
+/* ---------- 链接 / 开关 / 分页 ---------- */
+.el-link.el-link--primary {
+    color: var(--csu-primary-text);
+}
+
+.el-switch.is-checked .el-switch__core {
+    background-color: var(--csu-primary);
+    border-color: var(--csu-primary);
+}
+
+.el-pagination.is-background .el-pager li:not(.disabled).active {
+    background-color: var(--csu-primary);
+}
+
+.el-pagination.is-background .el-pager li:not(.disabled):hover {
+    color: var(--csu-primary);
+}
+
+.el-pager li.active,
+.el-pager li:hover {
+    color: var(--csu-primary);
+}
+
+/* ---------- 输入控件聚焦态 ---------- */
+.el-input__inner:focus,
+.el-textarea__inner:focus,
+.el-select .el-input.is-focus .el-input__inner {
+    border-color: var(--csu-primary);
+}
+
+.el-select-dropdown__item.selected {
+    color: var(--csu-primary-text);
+}
+
+.el-radio__input.is-checked .el-radio__inner,
+.el-checkbox__input.is-checked .el-checkbox__inner,
+.el-checkbox__input.is-indeterminate .el-checkbox__inner {
+    background-color: var(--csu-primary);
+    border-color: var(--csu-primary);
+}
+
+.el-radio__input.is-checked+.el-radio__label,
+.el-checkbox__input.is-checked+.el-checkbox__label {
+    color: var(--csu-primary-text);
+}
+
+.el-radio-group .el-radio-button__orig-radio:checked+.el-radio-button__inner {
+    background-color: var(--csu-primary);
+    border-color: var(--csu-primary);
+    box-shadow: -1px 0 0 0 var(--csu-primary);
+}
+
+.el-radio-button__inner:hover {
+    color: var(--csu-primary);
+}
+
+/* ---------- 标签页 ---------- */
+.el-tabs__item.is-active,
+.el-tabs__item:hover {
+    color: var(--csu-primary-text);
+}
+
+.el-tabs__active-bar {
+    background-color: var(--csu-primary);
+}
+
+/* ---------- 弹窗 / 抽屉 / 消息盒 ---------- */
+.el-dialog {
+    border-radius: var(--csu-radius);
+    box-shadow: var(--csu-shadow-lg);
+}
+
+.el-dialog__header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--csu-border-light);
+}
+
+.el-dialog__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--csu-text);
+}
+
+.el-dialog__body {
+    padding: 20px;
+    color: var(--csu-text-sub);
+}
+
+.el-dialog__footer {
+    padding: 12px 20px 18px;
+    border-top: 1px solid var(--csu-border-light);
+}
+
+.el-drawer__header {
+    margin-bottom: 0;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--csu-border-light);
+    color: var(--csu-text);
+    font-weight: 600;
+}
+
+.el-message-box__header {
+    padding: 16px 20px 8px;
+}
+
+.el-message-box__title {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.el-message-box__content {
+    padding: 10px 20px 18px;
+    color: var(--csu-text-sub);
+}
+
+.el-message-box {
+    border-radius: var(--csu-radius);
+}
+
+/* ---------- 表单 ---------- */
+.el-form-item__label {
+    color: var(--csu-text-sub);
+}
+
+/* ============================================================================
+ * 通用容器类（原各页面里重复的 .header / .body 收敛到这里）
+ * ========================================================================== */
+
+/* 白色卡片：统计卡、图表卡、表格卡统一用它 */
+.csu-card {
+    background: var(--csu-panel);
+    border: 1px solid var(--csu-border);
+    border-radius: var(--csu-radius);
+    box-shadow: var(--csu-shadow);
+}
+
+.csu-card--hover {
+    transition: box-shadow .2s ease, transform .2s ease;
+}
+
+.csu-card--hover:hover {
+    box-shadow: var(--csu-shadow-hover);
+    transform: translateY(-1px);
+}
+
+/* 页面纵向栅格 */
+.csu-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--csu-page-pad);
+}
+
+/* 图表网格：窄屏自动降列 */
+.csu-grid {
+    display: grid;
+    gap: var(--csu-page-pad);
+}
+
+.csu-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.csu-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.csu-grid--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.csu-grid--5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+/* 2:1 的不等宽两列（趋势图主区 + 侧栏） */
+.csu-grid--2-1 {
+    grid-template-columns: 2fr 1fr;
+}
+
+/* 网格子项允许收缩，否则 ECharts 会把栅格撑破 */
+.csu-grid>* {
+    min-width: 0;
+}
+
+@media (max-width: 1440px) {
+    .csu-grid--5 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1200px) {
+
+    .csu-grid--4,
+    .csu-grid--3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+
+    .csu-grid--2,
+    .csu-grid--2-1,
+    .csu-grid--4,
+    .csu-grid--3,
+    .csu-grid--5 {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* ---------- 数字与格式化 ---------- */
+
+/* 金额、数量、百分比：等宽数字，右对齐场景下不会抖动 */
+.csu-num {
+    font-family: var(--csu-font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.2px;
+}
+
+.csu-num--lg {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--csu-text);
+}
+
+.csu-unit {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--csu-text-weak);
+    margin-left: 3px;
+}
+
+/* ---------- 状态小圆点（配表格里的状态 tag 使用） ---------- */
+.csu-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.csu-dot--primary {
+    background: var(--csu-primary);
+}
+
+.csu-dot--warning {
+    background: var(--csu-warning);
+}
+
+.csu-dot--success {
+    background: var(--csu-success);
+}
+
+/* ---------- 表格：暖灰表头 + 细边框（覆盖 Element 默认冷灰） ---------- */
+.csu-table.el-table {
+    color: var(--csu-text);
+}
+
+.csu-table.el-table th.el-table__cell {
+    background-color: var(--csu-header-bg);
+    color: var(--csu-text-sub);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.csu-table.el-table--border,
+.csu-table.el-table--group {
+    border-color: var(--csu-border);
+}
+
+.csu-table.el-table--border th.el-table__cell,
+.csu-table.el-table--border td.el-table__cell {
+    border-right-color: var(--csu-border-light);
+}
+
+.csu-table.el-table td.el-table__cell,
+.csu-table.el-table th.el-table__cell.is-leaf {
+    border-bottom-color: var(--csu-border-light);
+}
+
+.csu-table.el-table--border::after,
+.csu-table.el-table--group::after,
+.csu-table.el-table::before {
+    background-color: var(--csu-border);
+}
+
+/* 行 hover 用暖色浅底，而不是 Element 默认的冷灰 */
+.csu-table.el-table--enable-row-hover .el-table__body tr:hover>td.el-table__cell {
+    background-color: var(--csu-primary-bg);
+}
+
+/* 空数据文案 */
+.csu-table .el-table__empty-text {
+    color: var(--csu-text-weak);
+    line-height: 1.8;
+}
+
+/* ---------- 工具条（列表页的筛选/操作行） ---------- */
+.csu-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.csu-toolbar__left,
+.csu-toolbar__right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* 描述性小字（图表口径说明等） */
+.csu-hint {
+    font-size: 12px;
+    color: var(--csu-text-weak);
+    line-height: 1.7;
+}

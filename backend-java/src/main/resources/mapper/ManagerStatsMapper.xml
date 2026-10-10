@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csu.takeout.mapper.ManagerStatsMapper">
+
+    <!--
+        管理端统计：全部为只读聚合查询。
+        约定：
+          1. 「派送中 / 已送达」走视图 sending_order / sended_order，不在这里写 JOIN 与 checked 过滤；
+          2. orderway.count、fastfood_shop.m_sale_v 由触发器维护，这里只读不重算；
+          3. 字段别名一律用 camelCase，因为全局关闭了 map-underscore-to-camel-case。
+        可移植性：以下 SQL 同时可在 MySQL 8 与 H2 1.4.200（MySQL 兼容模式）上执行，
+                 契约测试会逐条验证。
+    -->
+
+    <select id="countShops" resultType="long">
+        select count(*) from fastfood_shop
+    </select>
+
+    <select id="countUsers" resultType="long">
+        select count(*) from user
+    </select>
+
+    <!-- 总订单数 / 总营业额：一次扫描同时取两个聚合值，避免两次全表 count -->
+    <select id="sumOrders" resultType="com.csu.takeout.vo.OrderSumVO">
+        select count(*)                        as totalOrders,
+               coalesce(sum(order_money), 0)   as totalRevenue
+        from oorder
+    </select>
+
+    <select id="countUnsend" resultType="long">
+        select count(*) from oorder where checked = 0
+    </select>
+
+    <!-- 视图内部已含 checked = 1 条件与 oorder/wuliu/dispatcher 三表连接 -->
+    <select id="countSending" resultType="long">
+        select count(*) from sending_order
+    </select>
+
+    <select id="countSended" resultType="long">
+        select count(*) from sended_order
+    </select>
+
+    <!--
+        按天聚合：create_time 是 varchar('yyyy-MM-dd HH:mm:ss')，取前 10 位即日期。
+        这里刻意不用 date_format()：它在 H2 1.4.200（契约测试库）上没有实现，
+        会让契约测试无法覆盖本 SQL；字符串截取在 MySQL 8 与 H2 上行为一致。
+        范围过滤同样用字符串比较（格式固定，字典序 = 时间序），双方言通用。
+    -->
+    <select id="listDailyTrend" resultType="com.csu.takeout.vo.StatsDailyRowVO">
+        select substring(create_time, 1, 10)  as day,
+               count(*)                       as orderCount,
+               coalesce(sum(order_money), 0)  as revenue
+        from oorder
+        where create_time is not null
+          and create_time &gt;= #{beginDate}
+        <if test="shopName != null and shopName != ''">
+            and shop_name = #{shopName}
+        </if>
+        group by substring(create_time, 1, 10)
+        order by day
+    </select>
+
+    <!-- 状态分布：只统计 0/1/2 三种有效状态 -->
+    <select id="listStatusCount" resultType="com.csu.takeout.vo.StatsCountVO">
+        select cast(checked as char) as name,
+               count(*)              as count
+        from oorder
+        where checked in (0, 1, 2)
+        group by checked
+        order by checked
+    </select>
+
+    <!--
+        店铺业绩榜：以 oorder 的实时聚合为主，关联 fastfood_shop 补单价与触发器维护的销量。
+        排序口径由 metric 决定，用 choose 而不是 ${} 拼接，避免任何 SQL 注入面。
+    -->
+    <select id="listShopRank" resultType="com.csu.takeout.vo.ShopRankVO">
+        select o.shop_name              as shopName,
+               count(*)                 as orderCount,
+               coalesce(sum(o.order_money), 0) as revenue,
+               s.price                  as price,
+               s.m_sale_v               as sale
+        from oorder o
+                 join fastfood_shop s on s.shop_name = o.shop_name
+        group by o.shop_name, s.price, s.m_sale_v
+        <choose>
+            <when test="metric == 'count'">
+                order by orderCount desc, o.shop_name
+            </when>
+            <otherwise>
+                order by revenue desc, o.shop_name
+            </otherwise>
+        </choose>
+        limit #{limit}
+    </select>
+
+    <!-- 店铺静态信息（下钻接口用于判断店铺是否存在） -->
+    <select id="getShopBase" resultType="com.csu.takeout.vo.ShopRankVO">
+        select shop_name as shopName,
+               price     as price,
+               m_sale_v  as sale
+        from fastfood_shop
+        where shop_name = #{shopName}
+    </select>
+
+    <!-- 订餐方式：直接读表，count 由触发器维护，这里不重算也不过滤 -->
+    <select id="listOrderWay" resultType="com.csu.takeout.vo.StatsCountVO">
+        select orderway_name as name,
+               count          as count
+        from orderway
+        order by count desc
+    </select>
+
+    <!--
+        配送员工作量：left join 保证没派过单的配送员也出现（数量为 0）。
+        wuliu.ended 语义：0 在途、1 已完成。
+    -->
+    <select id="listDispatcherWorkload" resultType="com.csu.takeout.vo.DispatcherWorkloadVO">
+        select d.dispatcher_id                as dispId,
+               d.dispatcher_name              as dispName,
+               d.dispatcher_phone             as phone,
+               coalesce(sum(case when w.ended = 0 then 1 else 0 end), 0) as sendingCount,
+               coalesce(sum(case when w.ended = 1 then 1 else 0 end), 0) as sendedCount,
+               count(w.order_id)              as total
+        from dispatcher d
+                 left join wuliu w on w.disp_id = d.dispatcher_id
+        group by d.dispatcher_id, d.dispatcher_name, d.dispatcher_phone
+        order by total desc, d.dispatcher_id
+    </select>
+
+    <!--
+        下单时段：取 create_time 的小时部分，服务端补零到 24 个桶。
+        注意 group by 里必须重复整个表达式（不能只写 order by 里的别名）：
+        H2 1.4.200 把 hour() 当作聚合函数处理，只写别名会报
+        "Column create_time must be in the GROUP BY list"。
+    -->
+    <select id="listHourCount" resultType="com.csu.takeout.vo.StatsCountVO">
+        select cast(hour(create_time) as char) as name,
+               count(*)                        as count
+        from oorder
+        where create_time is not null
+        group by cast(hour(create_time) as char)
+        order by cast(hour(create_time) as char)
+    </select>
+
+</mapper>

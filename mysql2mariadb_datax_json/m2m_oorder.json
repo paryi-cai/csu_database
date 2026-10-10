@@ -1,0 +1,76 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 3
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "mysqlreader",
+          "parameter": {
+            "username": "yRjwDFuoPKlqya9h9H2Amg==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "`order_id`",
+              "`shop_name`",
+              "`order_money`",
+              "`order_way`",
+              "`cons_phone`",
+              "`cons_name`",
+              "`cons_addre`",
+              "`checked`",
+              "`create_time`"
+            ],
+            "splitPk": "",
+            "connection": [
+              {
+                "table": [
+                  "oorder"
+                ],
+                "jdbcUrl": [
+                  "jdbc:mysql://localhost:3307/caimingxuan"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "mysqlwriter",
+          "parameter": {
+            "username": "yRjwDFuoPKlqya9h9H2Amg==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "`order_id`",
+              "`shop_name`",
+              "`order_money`",
+              "`order_way`",
+              "`cons_phone`",
+              "`cons_name`",
+              "`cons_addre`",
+              "`checked`",
+              "`create_time`"
+            ],
+            "writeMode": "replace",
+            "preSql": [
+              "TRUNCATE TABLE oorder"
+            ],
+            "connection": [
+              {
+                "table": [
+                  "oorder"
+                ],
+                "jdbcUrl": "jdbc:mysql://localhost:3308/testdb"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

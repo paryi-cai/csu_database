@@ -1,0 +1,62 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 3
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "mysqlreader",
+          "parameter": {
+            "username": "yRjwDFuoPKlqya9h9H2Amg==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "`orderway_name`",
+              "`count`"
+            ],
+            "splitPk": "",
+            "connection": [
+              {
+                "table": [
+                  "orderway"
+                ],
+                "jdbcUrl": [
+                  "jdbc:mysql://localhost:3307/caimingxuan"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "mysqlwriter",
+          "parameter": {
+            "username": "yRjwDFuoPKlqya9h9H2Amg==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "`orderway_name`",
+              "`count`"
+            ],
+            "writeMode": "replace",
+            "preSql": [
+              "TRUNCATE TABLE orderway"
+            ],
+            "connection": [
+              {
+                "table": [
+                  "orderway"
+                ],
+                "jdbcUrl": "jdbc:mysql://localhost:3308/testdb"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

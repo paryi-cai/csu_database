@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csu.takeout.mapper.ShopMapper">
+
+    <!--
+        响应键与数据库列名并非简单驼峰对应：m_sale_v -> sale。
+        因此显式使用 AS 别名（全局已关闭 map-underscore-to-camel-case）。
+        与 Flask 版一致：不加排序条件。
+    -->
+    <select id="listAll" resultType="com.csu.takeout.vo.ShopVO">
+        select shop_name as shopName,
+               price     as price,
+               m_sale_v  as sale
+        from fastfood_shop
+    </select>
+
+</mapper>

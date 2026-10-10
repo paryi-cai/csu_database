@@ -1,0 +1,67 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 3
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "mysqlreader",
+          "parameter": {
+            "username": "yRjwDFuoPKlqya9h9H2Amg==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "`id`",
+              "`username`",
+              "`password`",
+              "`telephone`",
+              "`role`"
+            ],
+            "splitPk": "",
+            "connection": [
+              {
+                "table": [
+                  "user"
+                ],
+                "jdbcUrl": [
+                  "jdbc:mysql://localhost:3307/caimingxuan?useSSL=false"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "postgresqlwriter",
+          "parameter": {
+            "username": "fMaKElymbiVDjjwluBXyhA==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "\"id\"",
+              "\"username\"",
+              "\"password\"",
+              "\"telephone\"",
+              "\"role\""
+            ],
+            "connection": [
+              {
+                "table": [
+                  "public.user"
+                ],
+                "jdbcUrl": "jdbc:postgresql://localhost:5432/testdb"
+              }
+            ],
+            "preSql": [
+              "truncate table \"user\" cascade"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

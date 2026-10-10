@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        CSU 数据库课程设计 —— 校园快餐订餐管理系统（Java 版后端）
+        由 Flask 后端（backend/）重构而来，接口响应与 Flask 版逐字节兼容。
+        Spring Boot 3.4.4 + JDK 17，全面使用 jakarta.*
+    -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.4</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.csu</groupId>
+    <artifactId>takeout</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>csu-takeout</name>
+    <description>校园快餐订餐管理系统 - Spring Boot 3 后端</description>
+
+    <properties>
+        <!-- 编译目标固定 JDK 17，使用更新的 JDK 编译也产出 17 字节码 -->
+        <java.version>17</java.version>
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- 依赖版本：只对齐 sky-take-out 的“种类”，版本全部选 Boot 3 兼容版 -->
+        <mybatis-spring-boot.version>3.0.4</mybatis-spring-boot.version>
+        <pagehelper-spring-boot.version>2.1.0</pagehelper-spring-boot.version>
+        <druid-spring-boot-3.version>1.2.23</druid-spring-boot-3.version>
+        <knife4j.version>4.4.0</knife4j.version>
+        <jjwt.version>0.12.6</jjwt.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- MyBatis -->
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>${mybatis-spring-boot.version}</version>
+        </dependency>
+
+        <!-- 分页插件（本项目列表接口均为全量返回，保留依赖以对齐技术栈） -->
+        <dependency>
+            <groupId>com.github.pagehelper</groupId>
+            <artifactId>pagehelper-spring-boot-starter</artifactId>
+            <version>${pagehelper-spring-boot.version}</version>
+        </dependency>
+
+        <!-- Druid 连接池（Boot 3 专用 starter） -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid-spring-boot-3-starter</artifactId>
+            <version>${druid-spring-boot-3.version}</version>
+        </dependency>
+
+        <!-- MySQL 8 驱动（Boot 3 起 groupId 为 com.mysql，版本交给 Boot 管理） -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- 接口文档：Knife4j 4.x（OpenAPI 3 + jakarta） -->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+            <version>${knife4j.version}</version>
+        </dependency>
+
+        <!-- JJWT 0.12.x -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+            仅用于本地无 MySQL 环境时的接口契约回归测试（H2 MySQL 兼容模式）。
+            生产运行不使用；不参与打包。
+        -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.4.200</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>csu-takeout</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!--
+            受限环境（如无法加载 Java agent 的沙箱）专用：
+            本项目测试不使用 Mockito，排除后可避免 spring-boot-starter-test 传递进来的
+            mockito-core 在启动时因 "Could not initialize plugin: MockMaker" 失败。
+            默认不激活，普通构建行为完全不变：
+                mvn -Psandbox clean package
+        -->
+        <profile>
+            <id>sandbox</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-test</artifactId>
+                    <scope>test</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.mockito</groupId>
+                            <artifactId>mockito-core</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.mockito</groupId>
+                            <artifactId>mockito-junit-jupiter</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>net.bytebuddy</groupId>
+                            <artifactId>byte-buddy</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>net.bytebuddy</groupId>
+                            <artifactId>byte-buddy-agent</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
+</project>

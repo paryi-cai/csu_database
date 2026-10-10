@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csu.takeout.mapper.OrderMapper">
+
+    <!--
+        未派发订单：字段别名严格对齐 Flask 的响应键
+          order_money -> price
+          order_way   -> orderway（无下划线）
+    -->
+    <select id="listUnsendByPhone" resultType="com.csu.takeout.vo.UnsendOrderVO">
+        select order_id    as orderId,
+               shop_name   as shopName,
+               order_money as price,
+               order_way   as orderway,
+               cons_name   as consName,
+               cons_addre  as consAddre,
+               create_time as createTime
+        from oorder
+        where checked = 0
+          and cons_phone = #{consPhone}
+    </select>
+
+    <!--
+        派送中订单：直接查数据库视图，视图内部已包含 checked = 1 与三表连接。
+        视图列 dispatcher_phone 在响应中改名为 disp_phone。
+        管理器接口不返回 disp_phone，因此对应 SQL 放在各自的语句里控制列清单。
+    -->
+    <select id="listSendingByPhone" resultType="com.csu.takeout.vo.SendingOrderVO">
+        select order_id         as orderId,
+               shop_name        as shopName,
+               order_money      as orderMoney,
+               order_way        as orderWay,
+               cons_phone       as consPhone,
+               cons_name        as consName,
+               cons_addre       as consAddre,
+               disp_id          as dispId,
+               deliver_time     as deliverTime,
+               dispatcher_phone as dispPhone
+        from sending_order
+        where cons_phone = #{consPhone}
+    </select>
+
+    <select id="listSendedByPhone" resultType="com.csu.takeout.vo.SendingOrderVO">
+        select order_id         as orderId,
+               shop_name        as shopName,
+               order_money      as orderMoney,
+               order_way        as orderWay,
+               cons_phone       as consPhone,
+               cons_name        as consName,
+               cons_addre       as consAddre,
+               disp_id          as dispId,
+               deliver_time     as deliverTime,
+               dispatcher_phone as dispPhone
+        from sended_order
+        where cons_phone = #{consPhone}
+    </select>
+
+    <!--
+        新增订单：checked 交由数据库默认值 0；
+        订单方式计数与店铺销量由触发器维护，此处不写。
+    -->
+    <insert id="insert">
+        insert into oorder (shop_name, order_money, order_way, cons_phone, cons_name, cons_addre, create_time)
+        values (#{shopName}, #{orderMoney}, #{orderWay}, #{consPhone}, #{consName}, #{consAddre}, #{createTime})
+    </insert>
+
+    <!--
+        修改未派发订单的收货信息。
+
+        归属校验：谓词里带上 cons_phone（取自 JWT），只允许改**自己的**订单。
+        Flask 版只按 order_id 更新，任何登录用户都能改他人订单；这是既有的越权缺陷，
+        本次补上归属条件。SQL 与响应结构未变，对"改自己的订单"这一正常路径完全等价。
+    -->
+    <update id="updateConsInfo">
+        update oorder
+        set cons_name  = #{consName},
+            cons_addre = #{consAddre}
+        where order_id = #{orderId}
+          and cons_phone = #{consPhone}
+    </update>
+
+    <!--
+        删除（取消）订单：同样加归属校验。
+        这一点尤其重要——删除会触发 order_delete / order_delete_sale 两个触发器，
+        按手机号限定后，越权删除不会再误减别人店铺的 m_sale_v 与 orderway.count。
+    -->
+    <delete id="deleteByOrderId">
+        delete from oorder
+        where order_id = #{orderId}
+          and cons_phone = #{consPhone}
+    </delete>
+
+    <!-- ==================== 管理端 ==================== -->
+
+    <!--
+        未派发订单（全量）：比用户端多返回 cons_phone。
+        排序：按 order_id 倒序（新单排最前）。order_id 是自增主键，天然就是下单先后；
+        这里刻意不用 create_time——它对 oorder 可用，但下面两个视图里没有这一列
+        （init.sql 的视图只 select 了 10 个字段），三个列表用同一套排序口径更一致。
+        Flask 版没有排序（等价于主键升序），这是呈现层改进，不影响响应结构与字段。
+    -->
+    <select id="listAllUnsend" resultType="com.csu.takeout.vo.ManagerUnsendOrderVO">
+        select order_id    as orderId,
+               shop_name   as shopName,
+               order_money as price,
+               order_way   as orderway,
+               cons_phone  as consPhone,
+               cons_name   as consName,
+               cons_addre  as consAddre,
+               create_time as createTime
+        from oorder
+        where checked = 0
+        order by order_id desc
+    </select>
+
+    <!-- 派送中订单（全量）：来自视图，且不返回 disp_phone；排序同上 -->
+    <select id="listAllSending" resultType="com.csu.takeout.vo.ManagerOrderVO">
+        select order_id     as orderId,
+               shop_name    as shopName,
+               order_money  as orderMoney,
+               order_way    as orderWay,
+               cons_phone   as consPhone,
+               cons_name    as consName,
+               cons_addre   as consAddre,
+               disp_id      as dispId,
+               deliver_time as deliverTime
+        from sending_order
+        order by order_id desc
+    </select>
+
+    <!-- 已送达订单（全量）：来自视图，且不返回 disp_phone；排序同上 -->
+    <select id="listAllSended" resultType="com.csu.takeout.vo.ManagerOrderVO">
+        select order_id     as orderId,
+               shop_name    as shopName,
+               order_money  as orderMoney,
+               order_way    as orderWay,
+               cons_phone   as consPhone,
+               cons_name    as consName,
+               cons_addre   as consAddre,
+               disp_id      as dispId,
+               deliver_time as deliverTime
+        from sended_order
+        order by order_id desc
+    </select>
+
+    <select id="getConsPhoneByOrderId" resultType="java.lang.String">
+        select cons_phone
+        from oorder
+        where order_id = #{orderId}
+    </select>
+
+</mapper>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csu.takeout.mapper.ManagerShopMapper">
+
+    <!-- 判重：Flask 版用 select * fetchall() 判空，count 语义等价 -->
+    <select id="countByShopName" resultType="int">
+        select count(*)
+        from fastfood_shop
+        where shop_name = #{shopName}
+    </select>
+
+    <insert id="insert">
+        insert into fastfood_shop (shop_name, price, m_sale_v)
+        values (#{shopName}, #{price}, #{mSaleV})
+    </insert>
+    <update id="update">
+        update fastfood_shop
+        set price    = #{price},
+            m_sale_v = #{mSaleV}
+        where shop_name = #{shopName}
+    </update>
+
+    <delete id="deleteByShopName">
+        delete from fastfood_shop where shop_name = #{shopName}
+    </delete>
+
+</mapper>

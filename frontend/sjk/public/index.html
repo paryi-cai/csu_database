@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+  <title>
+    <%= htmlWebpackPlugin.options.title %>
+  </title>
+  <style>
+    /*
+      首屏兜底样式（在 JS 加载前生效，避免白屏闪烁）。
+      刻意不设 min-width：原先写死的 1500px 会让 1366×768 / 1280 的视口必然出现横向滚动条，
+      而且滚动的是整页（含侧栏与顶栏），连带让 AppShell 的"<1200px 自动折叠侧栏"、
+      theme.css 的 1440/1200/900 栅格断点、StatsDashboard 的 1680/1000/640 断点全部失效——
+      表现为"1500px 宽的布局里塞着一个折叠态侧栏"。
+      各断点自适应改由 theme.css 负责（本块只保留高度与去边距）。
+    */
+    html,
+    body,
+    #app {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      /* 窄屏兜底：低于该宽度时出现横向滚动，而不是把内容挤到不可用 */
+      min-width: 1024px;
+    }
+
+    li {
+      list-style-type: none;
+    }
+  </style>
+</head>
+
+<body>
+  <noscript>
+    <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled.
+        Please enable it to continue.</strong>
+  </noscript>
+  <div id="app"></div>
+  <!-- built files will be auto injected -->
+</body>
+
+</html>

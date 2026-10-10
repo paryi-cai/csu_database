@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csu.takeout.mapper.DispatcherMapper">
+
+    <select id="listAll" resultType="com.csu.takeout.entity.Dispatcher">
+        select dispatcher_id    as dispatcherId,
+               dispatcher_name  as dispatcherName,
+               dispatcher_phone as dispatcherPhone
+        from dispatcher
+    </select>
+
+    <select id="countByDispatcherId" resultType="int">
+        select count(*)
+        from dispatcher
+        where dispatcher_id = #{dispatcherId}
+    </select>
+
+    <insert id="insert">
+        insert into dispatcher (dispatcher_id, dispatcher_name, dispatcher_phone)
+        values (#{dispatcherId}, #{dispatcherName}, #{dispatcherPhone})
+    </insert>
+
+    <delete id="deleteByDispatcherId">
+        delete from dispatcher where dispatcher_id = #{dispatcherId}
+    </delete>
+
+</mapper>

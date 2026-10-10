@@ -1,0 +1,15 @@
+target/
+.idea/
+*.iml
+.git
+.gitignore
+.build.log
+.build.log.err
+tools/
+docker-compose.yml
+
+# 测试代码不必进构建上下文。
+# 打包时虽然用了 -DskipTests（不运行测试），但 Maven 仍会编译 src/test/java，
+# 排除后可省下上下文传输与编译时间。
+# 注意：若将来要在容器内跑测试，需删掉这一行。
+src/test/

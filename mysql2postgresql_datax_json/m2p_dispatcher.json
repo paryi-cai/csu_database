@@ -1,0 +1,63 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 3
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "mysqlreader",
+          "parameter": {
+            "username": "yRjwDFuoPKlqya9h9H2Amg==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "`dispatcher_id`",
+              "`dispatcher_name`",
+              "`dispatcher_phone`"
+            ],
+            "splitPk": "",
+            "connection": [
+              {
+                "table": [
+                  "dispatcher"
+                ],
+                "jdbcUrl": [
+                  "jdbc:mysql://localhost:3307/caimingxuan?useSSL=false"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "postgresqlwriter",
+          "parameter": {
+            "username": "fMaKElymbiVDjjwluBXyhA==",
+            "password": "XCYVpFosvZBBWobFzmLWvA==",
+            "column": [
+              "\"dispatcher_id\"",
+              "\"dispatcher_name\"",
+              "\"dispatcher_phone\""
+            ],
+            "connection": [
+              {
+                "table": [
+                  "public.dispatcher"
+                ],
+                "jdbcUrl": "jdbc:postgresql://localhost:5432/testdb"
+              }
+            ],
+            "preSql": [
+              "truncate table dispatcher"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

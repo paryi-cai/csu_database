@@ -1,0 +1,71 @@
+# 校园快餐订餐管理系统 —— Java 后端编排
+#
+# 与 Flask 版的 backend/docker-compose.yml 保持：
+#   - 对外端口不变：MySQL 3307、Redis 6379、API 5000
+#   - 数据卷不变：heu_db_mysql_data（external，需先 docker volume create）
+#   - 数据库初始化脚本不变：仍挂载 backend/db/init.sql
+#
+# 启动：docker compose -p csu_db up -d --build
+#
+# 注意：backend/db/init.sql 中的示例账号是 iu / mty，
+#       而 README 与验收脚本使用的测试账号是 CMX / YCX。
+#       因此根目录的 start_project.bat 会在启动后用幂等 SQL 补齐这两个账号
+#       （不修改 init.sql 本身）；手动启动时可参考 start_project.bat 中的同名步骤。
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: caimingxuan
+      TZ: Asia/Shanghai
+    ports:
+      - "3307:3306"
+    volumes:
+      - ../backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - heu_db_mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      # 用数据库账号做真实连接探测，避免"端口开了但实例还没准备好"导致后端启动失败
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p123456"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # 连接信息全部由环境变量注入；容器内 MySQL 使用 3306（对外映射为 3307）
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: "123456"
+      DB_NAME: caimingxuan
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      # 前后端约定的端口，前端 Axios 写死了 5000
+      SERVER_PORT: "5000"
+      TZ: Asia/Shanghai
+      JWT_SECRET: "12asdffa2323"
+    ports:
+      - "5000:5000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  heu_db_mysql_data:
+    external: true

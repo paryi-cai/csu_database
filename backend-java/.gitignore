@@ -1,0 +1,22 @@
+﻿target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### IDE ###
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+
+### 本地私有配置（含真实密钥），不提交 ###
+application-local.yml
+
+### 日志 ###
+*.log
+logs/
+.build.log
+.build.log.err
+
+### 依赖仓库副本（工具脚本生成） ###
+.mvn-local-repo/
