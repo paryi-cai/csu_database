@@ -4,7 +4,7 @@
 <mapper namespace="com.csu.takeout.mapper.OrderMapper">
 
     <!--
-        未派发订单：字段别名严格对齐 Flask 的响应键
+        未派发订单：字段别名严格对齐既有的响应键
           order_money -> price
           order_way   -> orderway（无下划线）
     -->
@@ -69,7 +69,7 @@
         修改未派发订单的收货信息。
 
         归属校验：谓词里带上 cons_phone（取自 JWT），只允许改**自己的**订单。
-        Flask 版只按 order_id 更新，任何登录用户都能改他人订单；这是既有的越权缺陷，
+        既有接口只按 order_id 更新，任何登录用户都能改他人订单；这是既有的越权缺陷，
         本次补上归属条件。SQL 与响应结构未变，对"改自己的订单"这一正常路径完全等价。
     -->
     <update id="updateConsInfo">
@@ -98,7 +98,7 @@
         排序：按 order_id 倒序（新单排最前）。order_id 是自增主键，天然就是下单先后；
         这里刻意不用 create_time——它对 oorder 可用，但下面两个视图里没有这一列
         （init.sql 的视图只 select 了 10 个字段），三个列表用同一套排序口径更一致。
-        Flask 版没有排序（等价于主键升序），这是呈现层改进，不影响响应结构与字段。
+        既有接口没有排序（等价于主键升序），这是呈现层改进，不影响响应结构与字段。
     -->
     <select id="listAllUnsend" resultType="com.csu.takeout.vo.ManagerUnsendOrderVO">
         select order_id    as orderId,

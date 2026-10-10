@@ -14,7 +14,7 @@ import java.util.List;
 public interface WuliuMapper {
 
     /**
-     * 按是否结束查询物流记录（对应 Flask 版
+     * 按是否结束查询物流记录（对应 SQL
      * {@code select * from wuliu where ended=?}）
      *
      * @param ended 0 进行中、1 已完成

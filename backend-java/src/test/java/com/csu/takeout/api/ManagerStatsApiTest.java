@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>覆盖点：</p>
  * <ol>
- *   <li>8 个统计接口的响应结构与 Flask 兼容排版（含末尾换行、非 ASCII 转义）；</li>
+ *   <li>8 个统计接口的响应结构与 统一响应排版（含末尾换行、非 ASCII 转义）；</li>
  *   <li>JWT 校验：统计接口未携带 token 必须 401（既有管理端接口的行为不受影响）；</li>
  *   <li>日期/小时补零：区间内没有订单的日期要出现在序列里，小时的桶固定 24 个；</li>
  *   <li>参数收敛与非法入参（days 越界、店铺不存在、limit 越界）；</li>

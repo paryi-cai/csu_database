@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Param;
 public interface UserMsgMapper {
 
     /**
-     * 按手机号查询用户详细信息（对应 Flask 版
+     * 按手机号查询用户详细信息（对应 SQL
      * {@code select * from user_msg where phone=?}）
      *
      * @param phone 手机号（取自 JWT）

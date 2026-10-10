@@ -7,7 +7,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 管理端新增服务员参数。字段名与 Flask 版一致。
+ * 管理端新增服务员参数。字段名与契约一致。
  */
 @Data
 @Schema(description = "新增服务员参数")

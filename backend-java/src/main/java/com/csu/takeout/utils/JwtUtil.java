@@ -18,7 +18,7 @@ import java.util.Map;
  * JWT 工具类。
  *
  * <p>方法与参数组织方式对齐 sky-take-out 的 JwtUtil（静态 createJWT / parseJWT），
- * 算法与载荷结构则与 Flask 版 auth.py 完全一致：</p>
+ * 算法与载荷结构则与 默认配置 完全一致：</p>
  * <pre>
  *   {
  *     "data": {"id": 3, "username": "YCX", "password": "aA.460734909", "telephone": "18873190398"},
@@ -27,8 +27,8 @@ import java.util.Map;
  *     "iss": "wufang"
  *   }
  * </pre>
- * <p>注意 {@code iat} 为"昨天"，这是 Flask 版原有的写法，此处刻意保持一致，
- * 以保证两边签发的 token 结构相同、可互相解析。</p>
+ * <p>注意 {@code iat} 为"昨天"，这是契约中刻意的写法，此处保持一致，
+ * 以保证 token 结构稳定、前后兼容。</p>
  */
 public class JwtUtil {
 
@@ -54,13 +54,13 @@ public class JwtUtil {
         data.put(JwtClaimsConstant.PASSWORD, userData.getPassword());
         data.put(JwtClaimsConstant.TELEPHONE, userData.getTelephone());
 
-        // 与 Flask 一致：过期时间 = 签发时间 + 1 天
+        // 与既有契约一致：过期时间 = 签发时间 + 1 天
         Date expiration = new Date(System.currentTimeMillis() + ttlMillis);
 
         JwtBuilder builder = Jwts.builder()
                 // 自定义声明 data
                 .claim(JwtClaimsConstant.DATA, data)
-                // 签发时间：与 Flask 一致，设置为"一天前"
+                // 签发时间：与既有契约一致，设置为"一天前"
                 .issuedAt(new Date(System.currentTimeMillis() - ttlMillis))
                 // 签发者
                 .issuer(issuer)
@@ -104,21 +104,20 @@ public class JwtUtil {
     /**
      * 由字符串密钥构造 HMAC-SHA256 密钥。
      *
-     * <p>这里刻意不使用 {@code Keys.hmacShaKeyFor(...)}：Flask 版 auth.py 使用的密钥是
+     * <p>这里刻意不使用 {@code Keys.hmacShaKeyFor(...)}：默认密钥是
      * {@code "12asdffa2323"}（仅 96 位），而 JJWT 会按 RFC 7518 校验
      * "HMAC-SHA256 密钥不得短于 256 位"，在<b>签名与验签时都会</b>抛出
      * {@code WeakKeyException}。直接构造 {@link SecretKeySpec} 可以完全绕开该校验。</p>
      *
-     * <p>为什么补零到 32 字节不影响与 Flask 的互通：RFC 2104 规定 HMAC 使用
+     * <p>为什么补零到 32 字节不改变签名结果：RFC 2104 规定 HMAC 使用
      * <b>长度小于分组长度</b>（SHA-256 为 64 字节）的密钥时，需在末尾补零至分组长度。
-     * PyJWT 把原始字节交给 Python 的 {@code hmac} 模块，JCE 的 {@code HmacSHA256} 收到
-     * 短于分组长度的 {@link SecretKeySpec} 时同样按 RFC 2104 补零，
-     * 因此两边算出的 HMAC 完全一致——补零到 32 字节只是为了让 JJWT 的长度校验通过，
-     * <b>实际参与 HMAC 的密钥内容没有任何变化</b>。</p>
+     * JCE 的 {@code HmacSHA256} 收到短于分组长度的 {@link SecretKeySpec} 时同样按
+     * RFC 2104 补零，因此补零到 32 字节只是为了让 JJWT 的长度校验通过，
+     * <b>实际参与 HMAC 的密钥内容没有任何变化</b>，签发的 token 与直接使用
+     * 原始 12 字节密钥完全一致（{@code JwtUtilTest} 以手工复算 HMAC 的方式验证）。</p>
      *
      * <p>关于更长的密钥：只有当密钥<b>超过分组长度 64 字节</b>时，RFC 2104 才要求先对密钥
-     * 做一次哈希；60/64/100 字节这类长度并不会触发。因此只要密钥不超过 64 字节，
-     * PyJWT 与 JCE 的计算方式就完全一致、token 双向互通。本项目默认密钥仅 12 字节，
+     * 做一次哈希；60/64/100 字节这类长度并不会触发。本项目默认密钥仅 12 字节，
      * 补零到 32 字节后仍远小于 64，不涉及该分支。</p>
      */
     private static SecretKey secretKey(String secretKey) {

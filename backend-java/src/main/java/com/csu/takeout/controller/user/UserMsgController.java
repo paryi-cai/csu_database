@@ -39,7 +39,7 @@ public class UserMsgController {
     /**
      * 查询个人信息
      *
-     * <p>Flask 契约（注意是 {@code status} + {@code data}，且 data 为<b>对象</b>而非数组）：</p>
+     * <p>接口契约（注意是 {@code status} + {@code data}，且 data 为<b>对象</b>而非数组）：</p>
      * <pre>
      * {"status": 200, "data": {"real_name": "...", "sex": "...", "age": 20,
      *                          "mail": "...", "phone": "...", "user_name": "..."}}
@@ -63,7 +63,7 @@ public class UserMsgController {
      * </pre>
      *
      * <p>用 {@code PUT} + {@code /usermsg/edit} 而不是复用 POST {@code /api/user/usermsg}：
-     * Flask 版该路径的 POST 有装饰器但函数体里只实现了 GET 分支（POST 会落到隐式
+     * 既有接口该路径的 POST 有装饰器但函数体里只实现了 GET 分支（POST 会落到隐式
      * {@code return None} → 500）。契约里"既有实现"只包含已实现的行为，
      * 因此不去"补全"一个原本会报错的 POST，而是新增一个语义明确的路径。</p>
      *

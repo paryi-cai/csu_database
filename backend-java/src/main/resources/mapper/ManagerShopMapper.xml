@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.csu.takeout.mapper.ManagerShopMapper">
 
-    <!-- 判重：Flask 版用 select * fetchall() 判空，count 语义等价 -->
+    <!-- 判重：既有接口用 select * fetchall() 判空，count 语义等价 -->
     <select id="countByShopName" resultType="int">
         select count(*)
         from fastfood_shop

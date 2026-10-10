@@ -3,7 +3,7 @@ package com.csu.takeout.constant;
 /**
  * 信息提示常量类
  *
- * <p>取值严格照搬 Flask 版 app.py 中返回给前端的 msg 文案，前端会直接展示这些字符串。</p>
+ * <p>取值与前端长期展示的文案逐字一致，前端会直接展示这些字符串。</p>
  */
 public class MessageConstant {
 

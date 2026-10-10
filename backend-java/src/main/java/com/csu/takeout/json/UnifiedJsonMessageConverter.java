@@ -8,10 +8,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Flask 兼容的 HTTP 消息转换器。
+ * 统一 JSON 消息转换器。
  *
- * <p>把 {@link FlaskJsonObjectMapper} 挂到 Spring MVC 上，使响应体与 Flask 的
- * {@code jsonify} 逐字节一致（空格排版、末尾换行、空数组、非 ASCII 转义）。</p>
+ * <p>把 {@link UnifiedJsonObjectMapper} 挂到 Spring MVC 上，使响应体与统一排版
+ * 逐字节一致（空格、末尾换行、空数组、非 ASCII 转义）。</p>
  *
  * <p>相比直接 {@code setObjectMapper}，这里额外做了两件事：</p>
  * <ol>
@@ -21,9 +21,9 @@ import java.nio.charset.StandardCharsets;
  *       {@code StringHttpMessageConverter} 处理纯文本，避免给文本加上 JSON 引号。</li>
  * </ol>
  */
-public class FlaskJsonMessageConverter extends MappingJackson2HttpMessageConverter {
+public class UnifiedJsonMessageConverter extends MappingJackson2HttpMessageConverter {
 
-    public FlaskJsonMessageConverter(ObjectMapper objectMapper) {
+    public UnifiedJsonMessageConverter(ObjectMapper objectMapper) {
         super(objectMapper);
         setDefaultCharset(StandardCharsets.UTF_8);
     }

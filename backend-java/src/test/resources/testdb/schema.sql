@@ -1,6 +1,6 @@
 -- 契约回归测试用最小表结构（H2 MySQL 兼容模式）
 -- 目的：在没有 MySQL / Docker 的机器上也能验证接口契约与"数据库副作用"。
--- 真实表结构仍以 backend/db/init.sql 为准，本文件不修改任何生产脚本。
+-- 真实表结构仍以 database/init.sql 为准，本文件不修改任何生产脚本。
 --
 -- 已覆盖批次 2 需要的对象：user / user_msg / fastfood_shop / oorder / orderway /
 -- dispatcher / wuliu，以及视图 sending_order、sended_order 与触发器
@@ -78,7 +78,7 @@ create table orderway
 )@@
 
 -- 刻意不建 server.fastfood_shop_name -> fastfood_shop.shop_name 外键：
--- 生产库（backend/db/init.sql）**没有**这个外键，实测 information_schema 只有
+-- 生产库（database/init.sql）**没有**这个外键，实测 information_schema 只有
 -- user_msg.id -> user.id 一条外键。夹具不能比生产"更严格"，否则测试会锁住一个
 -- 生产上不成立的行为（删店铺会因为外键失败，而生产上会删除成功并留下 server 孤儿行）。
 create table server
@@ -151,7 +151,7 @@ where o.checked = 1@@
 --
 -- 因此本测试覆盖的是：SQL 语句本身、字段映射、响应结构，以及"Java 不重复实现
 -- 触发器逻辑"这一职责边界；触发器副作用（销量增减、checked 置 1）需在真实
--- MySQL 上验证（见 README 的验收步骤与 tools/compare_api 脚本）。
+-- MySQL 上验证（见 README 的验收步骤）。
 --
 -- 唯一在 H2 上保留验证的数据库侧行为是 oorder.checked 的默认值 0（见
 -- UserApiMutationTest），因为 Java 侧插入语句刻意不写该列。

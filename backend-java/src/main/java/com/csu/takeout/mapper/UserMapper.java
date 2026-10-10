@@ -11,7 +11,7 @@ import org.apache.ibatis.annotations.Param;
 public interface UserMapper {
 
     /**
-     * 根据手机号与密码查询用户（对应 Flask 版
+     * 根据手机号与密码查询用户（对应 SQL
      * {@code select * from user where telephone = ? and password = ?}）
      *
      * @param telephone 手机号

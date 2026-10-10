@@ -65,11 +65,11 @@ logging:
 
 csu:
   jwt:
-    # JWT 签名密钥与 Flask 版默认值保持一致（生产请用环境变量 JWT_SECRET 覆盖）
+    # JWT 签名密钥与 既有接口默认值保持一致（生产请用环境变量 JWT_SECRET 覆盖）
     secret-key: ${JWT_SECRET:12asdffa2323}
-    # 过期时间：24 小时（与 Flask auth.py 的 days=1 一致）
+    # 过期时间：24 小时（与既有契约 的 days=1 一致）
     ttl: 86400000
     # 前端在自定义请求头 token 中传递 JWT（不是 Authorization: Bearer）
     token-name: token
-    # 签发者，解析时强校验（与 Flask PyJWT 的 issuer='wufang' 一致）
+    # 签发者，解析时强校验（解析时强校验）
     issuer: wufang

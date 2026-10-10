@@ -34,7 +34,7 @@ public class UserMsgServiceImpl implements UserMsgService {
     public UserMsgVO getByPhone(String phone) {
         UserMsg userMsg = userMsgMapper.getByPhone(phone);
         if (userMsg == null) {
-            // Flask 版此处会因 data[0] 越界而抛出 IndexError（返回 500）；
+            // 既有接口此处会因 data[0] 越界而抛出 IndexError（返回 500）；
             // 新实现返回 data=null，避免把异常抛给前端，正常数据下响应完全一致。
             log.warn("user_msg 中不存在手机号 {} 的记录", phone);
             return null;

@@ -28,13 +28,10 @@ public class UserServiceImpl implements UserService {
     /**
      * 用户登录
      *
-     * <p>与 Flask 版一致：先对手机号与密码做 {@code .strip()}（去首尾空白），
+     * <p>与契约一致：先对手机号与密码做 {@code .strip()}（去首尾空白），
      * 再按 手机号 + 密码 精确匹配查询 user 表；查询不到返回 code=1000。</p>
      *
-     * <p>对齐说明：Flask 的 app.py 写的是
-     * {@code userortel = request.json.get("userortel").strip()}，
-     * 即入参确实会去空白。因此这里必须同样 trim，否则"带首尾空格的账号密码"
-     * 在 Flask 能登录、在新后端会失败。</p>
+     * <p>注意：入参必须先去首尾空白，否则"带首尾空格的账号密码"会被误判为登录失败。</p>
      */
     @Override
     public UserLoginResult login(UserLoginDTO userLoginDTO) {
@@ -50,7 +47,7 @@ public class UserServiceImpl implements UserService {
                     .build();
         }
 
-        // 生成 token：载荷结构与 Flask 版 auth.py 完全一致
+        // 生成 token：载荷结构与 默认配置 完全一致
         JwtUserData userData = JwtUserData.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -72,11 +69,11 @@ public class UserServiceImpl implements UserService {
     /**
      * 修改密码
      *
-     * <p>与 Flask 版一致：先用 手机号 + 原密码 校验身份，校验通过后按手机号更新密码；
+     * <p>与契约一致：先用 手机号 + 原密码 校验身份，校验通过后按手机号更新密码；
      * 不校验新旧密码是否相同，也不影响已签发的 token。</p>
      *
-     * <p>Flask 版该接口未对 {@code new_pwd} / {@code old_pwd} 做 {@code .strip()}
-     * （直接取 {@code request.json.get(...)}），这里保持一致，不额外 trim。</p>
+     * <p>改密接口不对 {@code new_pwd} / {@code old_pwd} 做 {@code .strip()}（按原样使用），
+     * 这里保持一致，不额外 trim。</p>
      */
     @Override
     @Transactional
@@ -90,11 +87,11 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 复刻 Flask 的 {@code str.strip()} 语义：去首尾空白，{@code null} 原样返回。
+     * 去首尾空白（{@code strip()} 语义），{@code null} 原样返回。
      *
      * <p>注意与 Java 的 {@link String#trim()} 的区别：{@code strip()} 按 Unicode 空白判定，
      * {@code trim()} 只处理 ≤ U+0020 的字符。本项目入参为手机号与密码，两者等价；
-     * 这里用 {@code strip()} 以与 Flask 严格一致。</p>
+     * 这里用 {@code strip()} 以与既有语义严格一致。</p>
      */
     private String trim(String value) {
         return value == null ? null : value.strip();

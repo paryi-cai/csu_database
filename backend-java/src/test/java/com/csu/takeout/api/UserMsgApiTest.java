@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>覆盖三类行为：</p>
  * <ol>
- *   <li>查询：响应键与值（沿用 Flask 契约，data 为对象且不含 id）；</li>
+ *   <li>查询：响应键与值（沿用 接口契约，data 为对象且不含 id）；</li>
  *   <li>修改资料：写库生效、{@code phone} 不可改、无记录时返回业务失败、未登录 401；</li>
  *   <li>修改密码：原密码错误 → 1000，原密码正确 → 200 且新密码能登录。</li>
  * </ol>
@@ -40,7 +40,7 @@ class UserMsgApiTest extends ApiContractTestSupport {
     /* ==================== 1. 查询 ==================== */
 
     @Test
-    @DisplayName("GET /api/user/usermsg：响应键为 Flask 契约的六个键，且不含 id")
+    @DisplayName("GET /api/user/usermsg：响应键为 接口契约的六个键，且不含 id")
     void getUserMsg() {
         String body = getAsUser(USERMSG);
 

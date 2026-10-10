@@ -9,7 +9,7 @@ import java.io.Serializable;
 /**
  * 下单请求参数。
  *
- * <p>字段名与 Flask 版逐个对齐：{@code shop_name}、{@code order_money}、{@code order_way}、
+ * <p>字段名与 既有接口逐个对齐：{@code shop_name}、{@code order_money}、{@code order_way}、
  * {@code cons_name}、{@code cons_addre}；顾客手机号<b>不由前端传递</b>，
  * 而是从 JWT 载荷的 telephone 取得。</p>
  *

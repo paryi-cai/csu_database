@@ -38,7 +38,7 @@ public class ManagerServerController {
     /**
      * 服务员列表
      *
-     * <p>Flask 契约：除 {@code tabledata} 外还返回 {@code shop_range}
+     * <p>接口契约：除 {@code tabledata} 外还返回 {@code shop_range}
      * （店铺名候选列表，供新增表单的下拉框使用）。</p>
      */
     @GetMapping

@@ -1,8 +1,8 @@
 package com.csu.takeout.config;
 
 import com.csu.takeout.interceptor.JwtTokenInterceptor;
-import com.csu.takeout.json.FlaskJsonMessageConverter;
-import com.csu.takeout.json.FlaskJsonObjectMapper;
+import com.csu.takeout.json.UnifiedJsonMessageConverter;
+import com.csu.takeout.json.UnifiedJsonObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -26,11 +26,11 @@ import java.util.List;
  *
  * <p>组织方式对齐 sky-take-out 的 WebMvcConfiguration，差异点：</p>
  * <ul>
- *   <li>拦截器只注册一个（Flask 版只有一套 token），且只拦截 Flask 版真正做校验的 6 个接口；</li>
- *   <li>新增 {@link CorsFilter}：Flask 版每个路由都带 {@code @cross_origin()}，前端 8080 端口
+ *   <li>拦截器只注册一个（既有接口只有一套 token），且只拦截 既有接口真正做校验的 6 个接口；</li>
+ *   <li>新增 {@link CorsFilter}：既有接口每个路由都带 {@code @cross_origin()}，前端 8080 端口
  *       跨域访问 5000 端口，必须保留跨域支持；</li>
  *   <li>接口文档由 springfox 的 Docket 换为 springdoc 的 GroupedOpenApi（Knife4j 4.x）；</li>
- *   <li>消息转换器使用 Flask 兼容的 {@link FlaskJsonObjectMapper}。</li>
+ *   <li>消息转换器使用 统一的 {@link UnifiedJsonObjectMapper}。</li>
  * </ul>
  *
  * <p><b>为什么实现 {@link WebMvcConfigurer} 而不是继承 {@code WebMvcConfigurationSupport}：</b>
@@ -48,8 +48,8 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
     private final JwtTokenInterceptor jwtTokenInterceptor;
 
     /**
-     * 需要 JWT 校验的接口（与 Flask 版 app.py 中调用 get_token_phone 的接口一一对应）。
-     * 登录、店铺列表以及<b>既有</b>管理端接口在 Flask 版中没有做令牌校验，此处保持一致。
+     * 需要 JWT 校验的接口（需要登录态的用户端接口）。
+     * 登录、店铺列表以及<b>既有</b>管理端接口在 既有接口中没有做令牌校验，此处保持一致。
      *
      * <p>数据统计接口（/api/manager/stats/**）是本项目新增的功能，不属于"既有接口"，
      * 因此按新增功能的要求纳入校验：只有携带合法 token 的请求才能读取经营数据。
@@ -77,12 +77,12 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * 跨域配置：等价于 Flask 的 @cross_origin()，允许前端（localhost:8080）直连本服务
+     * 跨域配置：等价于 跨域直连，允许前端（localhost:8080）直连本服务
      */
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        // 回显请求来源（等价于 Flask-CORS 的默认行为），同时允许无 Origin 的直连调用
+        // 回显请求来源（等价于 跨域默认行为），同时允许无 Origin 的直连调用
         config.setAllowedOriginPatterns(List.of("*"));
         config.addAllowedHeader(CorsConfiguration.ALL);
         config.addAllowedMethod(CorsConfiguration.ALL);
@@ -124,7 +124,7 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
         return new OpenAPI().info(new Info()
                 .title("校园快餐订餐管理系统接口文档")
                 .version("1.0")
-                .description("由 Flask 后端重构为 Spring Boot 3 的校园快餐订餐系统，响应结构与 Flask 版完全兼容"));
+                .description("校园快餐订餐管理系统后端，响应结构与前端契约完全兼容"));
     }
 
     /**
@@ -142,19 +142,19 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * 拓展消息转化器：使用 Flask 兼容的 JSON 序列化器，保证响应体逐字节一致
+     * 拓展消息转化器：使用 统一 JSON 序列化器，保证响应体逐字节一致
      * （含空格排版、末尾换行、非 ASCII 转义）
      */
     @Override
     public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-        converters.add(0, new FlaskJsonMessageConverter(flaskObjectMapper()));
+        converters.add(0, new UnifiedJsonMessageConverter(unifiedObjectMapper()));
     }
 
     /**
-     * Flask jsonify 兼容的对象映射器
+     * 统一响应格式的对象映射器
      */
     @Bean
-    public ObjectMapper flaskObjectMapper() {
-        return new FlaskJsonObjectMapper();
+    public ObjectMapper unifiedObjectMapper() {
+        return new UnifiedJsonObjectMapper();
     }
 }

@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 用户端 —— 登录与账号相关接口
  *
- * <p>路径与 Flask 版 app.py 完全一致：{@code /api/user/**}</p>
+ * <p>路径统一为：{@code /api/user/**}</p>
  */
 @RestController
 @RequestMapping("/api/user")
@@ -34,7 +34,7 @@ public class UserController {
     /**
      * 用户登录
      *
-     * <p>Flask 契约（四个字段平铺在响应体根层级，注意用的是 {@code code} 而不是 {@code status}）：</p>
+     * <p>接口契约（四个字段平铺在响应体根层级，注意用的是 {@code code} 而不是 {@code status}）：</p>
      * <pre>
      * 成功：{"code": 200, "msg": "登录成功", "token": "&lt;jwt&gt;", "role": 0}
      * 失败：{"code": 1000, "msg": "用户名或密码错误"}
@@ -58,7 +58,7 @@ public class UserController {
     /**
      * 修改密码
      *
-     * <p>Flask 契约（该接口需要 token，手机号取自 JWT）：</p>
+     * <p>接口契约（该接口需要 token，手机号取自 JWT）：</p>
      * <pre>
      * 原密码错误：{"status": 1000, "msg": "原始密码错误"}
      * 修改成功：  {"status": 200,  "msg": "修改成功"}

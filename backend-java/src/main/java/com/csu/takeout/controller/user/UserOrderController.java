@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * 用户端 —— 订单相关接口
  *
- * <p>这三个接口在 Flask 版中同时声明了多个 HTTP 方法，但只有部分方法实现了业务分支：</p>
+ * <p>这三个接口在 既有接口中同时声明了多个 HTTP 方法，但只有部分方法实现了业务分支：</p>
  * <ul>
  *   <li>{@code /api/user/unsend}：GET / POST / DELETE 均已实现；</li>
  *   <li>{@code /api/user/sending}、{@code /api/user/sended}：只实现了 GET，
@@ -44,7 +44,7 @@ public class UserOrderController {
     /**
      * 下单
      *
-     * <p>Flask 契约：{@code {"status": 200, "msg": "成功下单"}}。
+     * <p>接口契约：{@code {"status": 200, "msg": "成功下单"}}。
      * 顾客手机号取自 JWT 载荷，请求体中<b>不</b>包含 cons_phone。</p>
      */
     @PostMapping("/addorder")
@@ -86,7 +86,7 @@ public class UserOrderController {
     /**
      * 取消（删除）未派发订单
      *
-     * <p>请求体字段名是 {@code delete_id}（与 Flask 版一致），前端通过 axios 的
+     * <p>请求体字段名是 {@code delete_id}（与契约一致），前端通过 axios 的
      * {@code { data: {...} }} 以 DELETE 请求体发送。</p>
      *
      * <p>同样带归属校验：不能删除他人订单（否则会误改别人店铺的销量统计）。</p>

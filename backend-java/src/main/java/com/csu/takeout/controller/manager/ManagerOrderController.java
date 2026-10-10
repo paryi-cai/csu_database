@@ -37,7 +37,7 @@ public class ManagerOrderController {
     /**
      * 未派发订单列表
      *
-     * <p>Flask 契约：除 {@code tabledata} 外还返回 {@code disp_range}
+     * <p>接口契约：除 {@code tabledata} 外还返回 {@code disp_range}
      * （配送员编号候选列表，供派发表单的下拉框使用）。</p>
      */
     @GetMapping("/unsend")
@@ -56,7 +56,7 @@ public class ManagerOrderController {
     /**
      * 派发订单
      *
-     * <p>Flask 契约：{@code {"status": 200, "msg": "成功派发"}}。
+     * <p>接口契约：{@code {"status": 200, "msg": "成功派发"}}。
      * 请求体字段为 {@code order_id}、{@code dispatcher_id}、{@code deliver_time}；
      * 写入物流记录后，订单状态由数据库触发器置为派送中。</p>
      */

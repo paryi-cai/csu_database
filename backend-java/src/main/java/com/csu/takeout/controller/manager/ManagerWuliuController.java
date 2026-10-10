@@ -29,7 +29,7 @@ public class ManagerWuliuController {
     /**
      * 按是否结束查询物流记录
      *
-     * <p>Flask 契约：查询参数名为 {@code id}；{@code id=0} 返回未结束（ended=0）的记录，
+     * <p>接口契约：查询参数名为 {@code id}；{@code id=0} 返回未结束（ended=0）的记录，
      * <b>其余任何取值（含缺省）都返回已结束（ended=1）的记录</b>。
      * 前端两个页面分别传 {@code ?id=0} 与 {@code ?id=1}。</p>
      */

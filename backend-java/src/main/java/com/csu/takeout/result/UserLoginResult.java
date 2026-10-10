@@ -10,7 +10,7 @@ import java.io.Serializable;
 /**
  * 登录业务结果（内部传输对象，不是响应体）。
  *
- * <p>Flask 版的登录接口把 code/msg/token/role 平铺在响应体根层级上，
+ * <p>既有接口的登录接口把 code/msg/token/role 平铺在响应体根层级上，
  * 因此这里先由 service 层产出"状态 + 数据"，再由 controller 摊平成
  * {@code {"code":..., "msg":..., "token":..., "role":...}}。</p>
  */

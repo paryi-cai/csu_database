@@ -11,7 +11,7 @@ import java.io.Serializable;
  * 用户详细信息实体，对应数据库表 user_msg
  *
  * <p>表中没有主键，通过 {@code id}（外键关联 user.id）与用户关联；
- * Flask 版是按 {@code phone} 字段查询的，这里保持一致。</p>
+ * 既有接口是按 {@code phone} 字段查询的，这里保持一致。</p>
  */
 @Data
 @Builder

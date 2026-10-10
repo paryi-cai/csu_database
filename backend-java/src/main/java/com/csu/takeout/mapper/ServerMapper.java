@@ -13,12 +13,12 @@ import java.util.List;
 public interface ServerMapper {
 
     /**
-     * 查询全部服务员（对应 Flask 版 {@code select * from server}）
+     * 查询全部服务员（对应 SQL：{@code select * from server}）
      */
     List<Server> listAll();
 
     /**
-     * 新增服务员前判重（Flask 版按 service_id 查存在性）
+     * 新增服务员前判重（既有接口按 service_id 查存在性）
      */
     int countByServiceId(@Param("serviceId") String serviceId);
 

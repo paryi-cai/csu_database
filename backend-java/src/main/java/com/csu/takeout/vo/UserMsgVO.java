@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- * 个人信息（对应 Flask 版 {@code jsonify(status=200, data=Data)} 中的 data 对象）。
+ * 个人信息（对应 SQL：{@code JSON(status=200, data=Data)} 中的 data 对象）。
  *
- * <p>响应键与 Flask 版完全一致：{@code real_name}、{@code sex}、{@code age}、
+ * <p>响应键与契约完全一致：{@code real_name}、{@code sex}、{@code age}、
  * {@code mail}、{@code phone}、{@code user_name}（前两者与最后一项由全局下划线命名策略生成）；
  * <b>不含</b> {@code id}。</p>
  */

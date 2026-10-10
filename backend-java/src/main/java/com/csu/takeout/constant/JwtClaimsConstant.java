@@ -5,7 +5,7 @@ package com.csu.takeout.constant;
  */
 public class JwtClaimsConstant {
 
-    /** 用户信息对象，对应 Flask 版 claims 中的 data */
+    /** 用户信息对象，对应 JWT claims 中的 data */
     public static final String DATA = "data";
 
     public static final String ID = "id";

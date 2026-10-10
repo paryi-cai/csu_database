@@ -11,8 +11,8 @@ import java.util.Map;
 /**
  * JWT 载荷中 data 声明的载体。
  *
- * <p>字段与 Flask 版 auth.py 中 {@code user} 字典完全一致。注意其中包含密码，
- * 这是原 Flask 实现的行为，为保证 token 结构完全兼容而保留（属于已知安全隐患，
+ * <p>字段与 默认配置 中 {@code user} 字典完全一致。注意其中包含密码，
+ * 这是既有契约的行为，为保证 token 结构完全兼容而保留（属于已知安全隐患，
  * 详见 README 的"说明"章节）。</p>
  */
 @Data

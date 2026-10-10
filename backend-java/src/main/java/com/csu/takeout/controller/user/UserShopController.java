@@ -28,8 +28,8 @@ public class UserShopController {
     /**
      * 获取店铺列表
      *
-     * <p>Flask 契约：{@code {"status": 200, "tabledata": [{"shop_name": "..", "price": 15, "sale": 100}]}}。
-     * 该接口在 Flask 版中<b>不校验</b> token，此处保持一致。</p>
+     * <p>接口契约：{@code {"status": 200, "tabledata": [{"shop_name": "..", "price": 15, "sale": 100}]}}。
+     * 该接口在 既有接口中<b>不校验</b> token，此处保持一致。</p>
      */
     @GetMapping("/shop")
     @Operation(summary = "获取店铺列表")

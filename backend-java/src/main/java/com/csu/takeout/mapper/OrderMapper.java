@@ -25,7 +25,7 @@ import java.util.List;
 public interface OrderMapper {
 
     /**
-     * 查询某用户的未派发订单（对应 Flask 版
+     * 查询某用户的未派发订单（对应 SQL
      * {@code select * from oorder where checked=0 and cons_phone=?}）
      *
      * @param consPhone 顾客手机号（取自 JWT）
@@ -49,7 +49,7 @@ public interface OrderMapper {
      * <p>只插入业务字段，{@code checked} 由数据库默认值 0 填充；
      * 订单数量统计与销量递增由数据库触发器完成，此处不处理。</p>
      *
-     * @param order 订单（createTime 由业务层按 Flask 的 yyyy-MM-dd HH:mm:ss 生成）
+     * @param order 订单（createTime 由业务层按 yyyy-MM-dd HH:mm:ss 生成）
      * @return 影响行数
      */
     int insert(Order order);
@@ -58,7 +58,7 @@ public interface OrderMapper {
      * 修改未派发订单的收货信息。
      *
      * <p>SQL 同时匹配 {@code order_id} 与 {@code consPhone}，即只允许改自己的订单
-     * （Flask 版只按 order_id，存在越权；此处补上归属条件）。</p>
+     * （既有接口只按 order_id，存在越权；此处补上归属条件）。</p>
      *
      * @return 受影响行数；0 表示订单不存在**或不属于该用户**
      */
@@ -68,7 +68,7 @@ public interface OrderMapper {
                        @Param("consAddre") String consAddre);
 
     /**
-     * 删除订单（对应 Flask 版 {@code delete from oorder where order_id=?}，另加归属校验）。
+     * 删除订单（对应 SQL：{@code delete from oorder where order_id=?}，另加归属校验）。
      *
      * <p>删除后由数据库触发器 {@code order_delete} / {@code order_delete_sale}
      * 自动维护 orderway.count 与 fastfood_shop.m_sale_v；因此归属校验也顺带避免了
@@ -81,7 +81,7 @@ public interface OrderMapper {
     /* ==================== 管理端 ==================== */
 
     /**
-     * 查询全部未派发订单（对应 Flask 版 {@code select * from oorder where checked=0}）
+     * 查询全部未派发订单（对应 SQL：{@code select * from oorder where checked=0}）
      */
     List<ManagerUnsendOrderVO> listAllUnsend();
 
@@ -96,8 +96,8 @@ public interface OrderMapper {
     List<ManagerOrderVO> listAllSended();
 
     /**
-     * 按订单号查询顾客手机号（派发订单时用于填充 wuliu.cons_phone，
-     * 与 Flask 版 {@code select cons_phone from oorder where order_id=?} 一致）
+     * 按订单号查询顾客手机号（派发订单时用于填充 wuliu.cons_phone；
+     * SQL：{@code select cons_phone from oorder where order_id=?}）
      */
     String getConsPhoneByOrderId(@Param("orderId") Integer orderId);
 }

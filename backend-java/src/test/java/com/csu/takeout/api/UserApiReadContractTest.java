@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class UserApiReadContractTest extends ApiContractTestSupport {
 
-    /** Flask: jsonify(status=200, tabledata=[{shop_name, price, sale}]) */
+    /** 响应格式(status=200, tabledata=[{shop_name, price, sale}]) */
     @Test
     @DisplayName("GET /api/user/shop：店铺列表字段与排版")
     void listShop() {
@@ -79,7 +79,7 @@ class UserApiReadContractTest extends ApiContractTestSupport {
 
     /** 个人信息：status + data（data 是对象），不含 id 字段 */
     @Test
-    @DisplayName("GET /api/user/usermsg：data 为对象且字段名与 Flask 一致")
+    @DisplayName("GET /api/user/usermsg：data 为对象且字段名与既有契约一致")
     void getUserMsg() {
         ResponseEntity<String> response = authorizedGet("/api/user/usermsg", loginAsUser());
 
@@ -112,7 +112,7 @@ class UserApiReadContractTest extends ApiContractTestSupport {
         }
     }
 
-    /** 店铺列表接口在 Flask 版不校验 token，这里保持一致 */
+    /** 店铺列表接口在 既有接口不校验 token，这里保持一致 */
     @Test
     @DisplayName("GET /api/user/shop 不要求 token")
     void shopListDoesNotRequireToken() {

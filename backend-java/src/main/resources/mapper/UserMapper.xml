@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.csu.takeout.mapper.UserMapper">
 
-    <!-- 保持 Flask 版语义：按手机号 + 密码精确匹配，取第一条 -->
+    <!-- 保持 既有接口语义：按手机号 + 密码精确匹配，取第一条 -->
     <select id="getByTelephoneAndPassword" resultType="com.csu.takeout.entity.User">
         select id, username, password, telephone, role
         from user

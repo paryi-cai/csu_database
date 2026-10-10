@@ -9,7 +9,7 @@ import java.io.Serializable;
  * 后端统一返回结果。
  *
  * <p>与 sky-take-out 的代码组织方式一致（Lombok + 静态工厂 + 泛型 data），
- * 但字段名与取值遵循 Flask 版的响应契约：</p>
+ * 但字段名与取值遵循 既有接口的响应契约：</p>
  * <ul>
  *   <li>登录接口：{"code": 200|1000, "msg": "..."} —— 注意是 {@code code}，且是数字</li>
  *   <li>其余接口：{"status": 200|1000, "msg": "..."} 或 {"status": 200, "tabledata": [...]}</li>
@@ -22,7 +22,7 @@ import java.io.Serializable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Result<T> implements Serializable {
 
-    /** 状态码：200 成功；1000 业务失败（与 Flask 版一致，注意是数字而非字符串） */
+    /** 状态码：200 成功；1000 业务失败（与契约一致，注意是数字而非字符串） */
     private Integer code;
 
     /** 提示信息 */

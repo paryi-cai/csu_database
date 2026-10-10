@@ -73,7 +73,7 @@
                 </div>
 
                 <p class="login-note csu-hint">
-                    注册与找回密码依赖短信验证码接口，该路由在原后端中处于注释状态（返回 404），
+                    注册与找回密码依赖短信验证码接口，该路由未实现（返回 404），
                     因此本版未提供入口，避免进入无法完成的流程。
                 </p>
             </div>
@@ -91,10 +91,10 @@
  *   2. 登录逻辑与接口完全不变（POST /api/user/login，成功写 localStorage.token，
  *      role=0 进 /user，否则进 /manage）；
  *   3. 去掉了「注册」「忘记密码」入口：这两个页面依赖 /api/user/register/send_sms、
- *      /api/user/register/test、/api/user/findback，这些路由在原 Flask 与 Java 版中
- *      都处于注释状态（请求会 404），原页面点进去也无法完成注册，属于死流程。
+ *      /api/user/register/test、/api/user/findback，这些路由未实现
+ *      （请求会 404），页面点进去也无法完成注册，属于死流程。
  *      删除入口而不是伪造一个假成功提示，避免误导使用者。
- *      相关代码路径仍在后端契约文档中有据可查（README 的接口对照表）。
+ *      相关接口状态见 README 的「接口一览」。
  */
 export default {
     name: 'MyLogin',

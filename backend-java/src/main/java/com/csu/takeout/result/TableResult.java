@@ -10,9 +10,9 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 列表类接口的统一返回结构，对齐 Flask 版 {@code jsonify(status=200, tabledata=Data, ...)}。
+ * 列表类接口的统一返回结构，对齐响应结构 {@code JSON(status=200, tabledata=Data, ...)}。
  *
- * <p>Flask 版共 9 个接口使用 {@code status} + {@code tabledata} 结构，其中 2 个额外返回
+ * <p>既有接口共 9 个接口使用 {@code status} + {@code tabledata} 结构，其中 2 个额外返回
  * 下拉候选数据（{@code disp_range} / {@code shop_range}）。为做到"不多输出任何一个键"，
  * 这里对 null 字段做忽略处理，并按需要填充额外字段。</p>
  *

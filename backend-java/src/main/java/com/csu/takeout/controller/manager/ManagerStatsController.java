@@ -29,7 +29,7 @@ import java.util.Map;
  *
  * <p><b>与既有管理端接口的差别</b>：本组接口在
  * {@code WebMvcConfiguration.JWT_PATH_PATTERNS} 中注册了 JWT 校验
- * （其余管理端接口沿用 Flask 原样不校验，未做任何改动）。
+ * （其余管理端接口沿用既有设计不校验，未做任何改动）。
  * 前端本来就在每个请求头携带 token，因此对现有页面零影响。</p>
  *
  * <p><b>只读保证</b>：全部为 GET + 聚合查询，不写任何表，也就不可能触发

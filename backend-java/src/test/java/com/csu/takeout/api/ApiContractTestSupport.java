@@ -20,7 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
  * <p>提供两件事：</p>
  * <ul>
  *   <li>{@link #login}：调用真实登录接口拿 token（顺便验证登录链路）；</li>
- *   <li>{@link #esc}：按 Flask（Python json.dumps ensure_ascii=True）规则生成 unicode 转义，
+ *   <li>{@link #esc}：按 约定规则（非 ASCII 一律转义）生成 unicode 转义，
  *       用于断言<b>响应体原文</b>。运行时生成可避免 Java 编译器抢先解析源码里的反斜杠-u。</li>
  * </ul>
  *
@@ -95,7 +95,7 @@ abstract class ApiContractTestSupport {
     /**
      * 带请求体的 DELETE，且不携带 token。
      *
-     * <p>管理端接口在 Flask 版不校验 token，因此这里不加 token 头
+     * <p>管理端接口在 既有接口不校验 token，因此这里不加 token 头
      * （若加 {@code null} 值会触发 HttpClient 的 NullPointerException）。</p>
      */
     protected ResponseEntity<String> deleteJson(String url, String json) {
@@ -136,9 +136,9 @@ abstract class ApiContractTestSupport {
     }
 
     /**
-     * 按 Flask（Python json.dumps ensure_ascii=True）规则转义非 ASCII 字符。
+     * 按 约定规则（非 ASCII 一律转义）转义非 ASCII 字符。
      *
-     * <p>Jackson 输出大写十六进制（{@code \u767B}），Python 输出小写（{@code \u767b}），
+     * <p>Jackson 输出大写十六进制（{@code \u767B}），另一种实现输出小写（{@code \u767b}），
      * 两者语义等价；本项目采用 Jackson 的大写形式，对比脚本会做归一化。</p>
      */
     static String esc(String text) {

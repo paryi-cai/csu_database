@@ -101,7 +101,7 @@ import { fmtText } from '@/utils/format'
  * 用户端 - 个人信息（查看 / 修改资料 / 修改密码）。
  *
  * 接口：
- *   GET  /api/user/usermsg        查询（响应 data 为对象，Flask 契约）
+ *   GET  /api/user/usermsg        查询（响应 data 为对象，接口契约）
  *   PUT  /api/user/usermsg/edit   修改 5 个字段
  *   PUT  /api/user/usermsg/pwd    改密码（语义与 POST /api/user/pwd_chg 一致）
  *

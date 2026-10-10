@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * 管理端 —— 店铺管理
  *
- * <p>Flask 契约（该接口不校验 token）：POST 是同一个处理函数，按请求体的
+ * <p>接口契约（该接口不校验 token）：POST 是同一个处理函数，按请求体的
  * {@code action} 字段区分 {@code add} 与 {@code change} 两种操作，因此这里同样
  * 只声明<b>一个</b> POST 方法（两个同路径的 @PostMapping 会导致映射冲突）。</p>
  */
@@ -58,7 +58,7 @@ public class ManagerShopController {
         Integer price = toInteger(dto.getPrice());
         Integer mSaleV = toInteger(dto.getMSaleV());
         if (price == null || mSaleV == null) {
-            // 复刻 Flask 的 int(...) 转换失败场景
+            // 复刻既有的 int(...) 转换失败场景
             return TableResult.error(MessageConstant.UNKNOWN_ERROR);
         }
 
@@ -72,7 +72,7 @@ public class ManagerShopController {
             managerShopService.change(dto.getShopName(), price, mSaleV);
             return TableResult.success(MessageConstant.SHOP_UPDATE_SUCCESS);
         }
-        // Flask 版：action 既不是 add 也不是 change 时没有任何分支命中，返回 500。
+        // 既有接口：action 既不是 add 也不是 change 时没有任何分支命中，返回 500。
         // 这里收敛为业务失败响应（HTTP 200 + msg），避免依赖异常；前端只会传 add/change。
         log.warn("未知的 action：{}", dto.getAction());
         return TableResult.error(MessageConstant.UNKNOWN_ERROR);
@@ -91,7 +91,7 @@ public class ManagerShopController {
         return TableResult.success(MessageConstant.SHOP_DELETE_SUCCESS);
     }
 
-    /** 复刻 Flask 的 int() 语义：字符串转整数，失败返回 null */
+    /** 复刻既有的 int() 语义：字符串转整数，失败返回 null */
     private Integer toInteger(String value) {
         if (value == null || value.isBlank()) {
             return null;

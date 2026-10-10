@@ -9,15 +9,15 @@ import java.io.Serializable;
 /**
  * 管理端店铺维护参数（同一接口按 {@code action} 区分新增与修改）。
  *
- * <p>字段名与 Flask 版一致：{@code action}、{@code shop_name}、{@code price}、{@code m_sale_v}。</p>
+ * <p>字段名与契约一致：{@code action}、{@code shop_name}、{@code price}、{@code m_sale_v}。</p>
  *
  * <p>注意：全局下划线命名策略只作用于<b>序列化</b>（响应），不作用于<b>反序列化</b>（请求）。
  * 因此请求里的 {@code shop_name}、{@code m_sale_v} 必须用 {@link JsonProperty} 显式声明，
  * 否则会因"Unrecognized field"导致 400/解析失败。</p>
  *
- * <p>{@code price} 与 {@code m_sale_v} 声明为 {@link String}，是为了复刻 Flask 版的
+ * <p>{@code price} 与 {@code m_sale_v} 声明为 {@link String}，是为了复刻既有 版的
  * {@code int(price)} 转换语义——前端 Element UI 的输入框提交的是字符串，
- * 而 Flask 会把它转成整数后写库。由 controller 显式转换，转换失败时按业务失败返回。</p>
+ * 而 既有接口会把它转成整数后写库。由 controller 显式转换，转换失败时按业务失败返回。</p>
  */
 @Data
 @Schema(description = "店铺维护参数（action=add/change）")

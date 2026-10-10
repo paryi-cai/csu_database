@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * 用户端订单业务实现
  *
- * <p>职责边界（与 Flask 版一致）：</p>
+ * <p>职责边界（与契约一致）：</p>
  * <ul>
  *   <li>订单状态 {@code checked} <b>不</b>由本类维护，派生逻辑全部在数据库触发器里
  *       （派发时 {@code wuliu_insert} 置 1）；</li>
@@ -34,7 +34,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
-    /** 与 Flask 版完全一致：datetime.now().strftime('%Y-%m-%d %H:%M:%S') */
+    /** 与契约完全一致：datetime.now().strftime('%Y-%m-%d %H:%M:%S') */
     private static final DateTimeFormatter CREATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -47,7 +47,7 @@ public class OrderServiceImpl implements OrderService {
                 .shopName(dto.getShopName())
                 .orderMoney(dto.getOrderMoney())
                 .orderWay(dto.getOrderWay())
-                // 顾客手机号来自 JWT，不由前端传入（与 Flask 版一致）
+                // 顾客手机号来自 JWT，不由前端传入（与契约一致）
                 .consPhone(consPhone)
                 .consName(dto.getConsName())
                 .consAddre(dto.getConsAddre())
@@ -75,7 +75,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public boolean updateUnsend(String consPhone, OrderUpdateDTO dto) {
-        // 与 Flask 版的差异：SQL 里多一个 cons_phone 谓词（越权修复）。
+        // 与 既有接口的差异：SQL 里多一个 cons_phone 谓词（越权修复）。
         // 返回受影响行数，让 Controller 能把"订单不存在/不属于你"如实告诉调用方，
         // 而不是无论改没改成都回"修改成功"。
         int rows = orderMapper.updateConsInfo(

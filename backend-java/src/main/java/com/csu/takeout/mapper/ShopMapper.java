@@ -12,9 +12,9 @@ import java.util.List;
 public interface ShopMapper {
 
     /**
-     * 查询全部店铺（对应 Flask 版 {@code select * from fastfood_shop}）
+     * 查询全部店铺（对应 SQL：{@code select * from fastfood_shop}）
      *
-     * <p>无排序条件，与 Flask 版一致，顺序由数据库决定。</p>
+     * <p>无排序条件，与契约一致，顺序由数据库决定。</p>
      *
      * @return 店铺列表，元素键为 shop_name / price / sale
      */

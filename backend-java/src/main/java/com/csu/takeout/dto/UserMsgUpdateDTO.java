@@ -13,7 +13,7 @@ import java.io.Serializable;
  * 性别（{@code sex}）、年龄（{@code age}）、邮箱（{@code mail}）。</p>
  *
  * <p><b>刻意不含 {@code phone}</b>：{@code user_msg.phone} 是既有接口
- * {@code GET /api/user/usermsg} 的查询键（Flask 与 Java 都是
+ * {@code GET /api/user/usermsg} 的查询键（前后端 都是
  * {@code select * from user_msg where phone = ?}），一旦允许修改，用户改完就再也查不到
  * 自己的记录（接口会返回没有 data 键的 {"status":200}）。因此联系电话在页面上只读，
  * 请求体里也不提供该字段。</p>

@@ -31,7 +31,7 @@ public class ManagerDispatcherController {
 
     private final DispatcherService dispatcherService;
 
-    /** 配送员列表（Flask 版不额外返回候选列表） */
+    /** 配送员列表（既有接口不额外返回候选列表） */
     @GetMapping
     @Operation(summary = "查询配送员列表")
     public TableResult<Dispatcher> listDispatcher() {

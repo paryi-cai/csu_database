@@ -47,7 +47,7 @@ public class ManagerOrderServiceImpl implements ManagerOrderService {
     @Override
     @Transactional
     public void dispatch(OrderDispatchDTO dto) {
-        // 与 Flask 版一致：先从订单表取出顾客手机号，再写入物流记录
+        // 与契约一致：先从订单表取出顾客手机号，再写入物流记录
         String consPhone = orderMapper.getConsPhoneByOrderId(dto.getOrderId());
         wuliuMapper.insert(Wuliu.builder()
                 .orderId(dto.getOrderId())

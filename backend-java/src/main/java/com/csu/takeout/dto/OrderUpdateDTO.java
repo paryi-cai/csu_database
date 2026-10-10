@@ -9,7 +9,7 @@ import java.io.Serializable;
 /**
  * 用户修改未派发订单的收货信息。
  *
- * <p>字段名与 Flask 版一致：{@code order_id}、{@code cons_name}、{@code cons_addre}。</p>
+ * <p>字段名与契约一致：{@code order_id}、{@code cons_name}、{@code cons_addre}。</p>
  */
 @Data
 @Schema(description = "修改未派发订单的收货信息")

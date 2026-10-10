@@ -11,7 +11,7 @@ import java.io.Serializable;
 /**
  * 店铺名称候选项，用于 /api/manager/server 的 {@code shop_range}。
  *
- * <p>Flask 版返回的元素形如 {@code {"shop_name": "大美鸡公煲"}}（只含名称）。</p>
+ * <p>既有接口返回的元素形如 {@code {"shop_name": "大美鸡公煲"}}（只含名称）。</p>
  */
 @Data
 @Builder

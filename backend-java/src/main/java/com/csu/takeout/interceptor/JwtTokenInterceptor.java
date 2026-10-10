@@ -3,7 +3,7 @@ package com.csu.takeout.interceptor;
 import com.csu.takeout.constant.MessageConstant;
 import com.csu.takeout.context.BaseContext;
 import com.csu.takeout.dto.JwtUserData;
-import com.csu.takeout.json.FlaskJsonObjectMapper;
+import com.csu.takeout.json.UnifiedJsonObjectMapper;
 import com.csu.takeout.properties.JwtProperties;
 import com.csu.takeout.result.Result;
 import com.csu.takeout.utils.JwtUtil;
@@ -26,7 +26,7 @@ import java.io.IOException;
  * <p>结构与 sky-take-out 的 JwtTokenUserInterceptor 一致，差异点：</p>
  * <ul>
  *   <li>令牌从自定义请求头 {@code token} 中取（不是 {@code Authorization: Bearer}）；</li>
- *   <li>BaseContext 中保存的是<b>手机号</b>（Flask 版所有业务查询都以手机号为键）；</li>
+ *   <li>BaseContext 中保存的是<b>手机号</b>（既有接口所有业务查询都以手机号为键）；</li>
  *   <li>校验失败时直接写出 401 响应（与 sky 的 {@code response.setStatus(401); return false;}
  *       同一个思路），而不是抛异常。</li>
  * </ul>
@@ -44,8 +44,8 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
 
     private final JwtProperties jwtProperties;
 
-    /** 401 响应体使用与业务响应一致的 Flask 兼容排版 */
-    private final FlaskJsonObjectMapper jsonMapper = new FlaskJsonObjectMapper();
+    /** 401 响应体使用与业务响应一致的 统一响应排版 */
+    private final UnifiedJsonObjectMapper jsonMapper = new UnifiedJsonObjectMapper();
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -97,7 +97,7 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(jsonMapper.toFlaskJson(Result.error(message)));
+        response.getWriter().write(jsonMapper.toUnifiedJson(Result.error(message)));
         return false;
     }
 }

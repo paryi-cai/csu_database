@@ -9,7 +9,7 @@ import java.io.Serializable;
 /**
  * 管理端派发订单参数（POST /api/manager/unsend）。
  *
- * <p>字段名与 Flask 版一致，注意请求键是 {@code dispatcher_id}，
+ * <p>字段名与契约一致，注意请求键是 {@code dispatcher_id}，
  * 而写入 wuliu 表时对应 {@code disp_id} 列。</p>
  */
 @Data

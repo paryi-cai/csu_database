@@ -17,5 +17,5 @@ spring:
 
 csu:
   jwt:
-    # 必须与 Flask 版 auth.py 的 secret 保持一致，否则 Flask 签发的 token 无法在新后端解析
+    # JWT 签名密钥（生产环境务必改为强密钥；容器编排的默认值见 docker-compose.yml 的 JWT_SECRET）
     secret-key: 你的JWT密钥

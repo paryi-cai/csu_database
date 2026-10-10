@@ -25,7 +25,7 @@ import java.sql.SQLIntegrityConstraintViolationException;
  * 全局异常处理器，代码组织对齐 sky-takeout 的 GlobalExceptionHandler。
  *
  * <p>关于响应体字段名：除了登录接口用 {@code code} 之外，本项目其余接口的成功与失败
- * 响应都用 {@code status}（Flask 契约）。因此这里的兜底错误统一使用
+ * 响应都用 {@code status}（接口契约）。因此这里的兜底错误统一使用
  * {@link TableResult}（输出 {@code status}），避免错误响应出现 {@code code} 而
  * 成功响应是 {@code status} 的不一致——前端只判断 {@code status}，
  * 若错误时返回 {@code code}，用户会看不到任何提示。</p>
@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
     /**
      * 唯一键 / 主键冲突（MyBatis-Spring 翻译后的实际类型）。
      *
-     * <p>复刻 Flask 的提示思路：Flask 直接执行 INSERT，靠数据库报
+     * <p>复刻既有的提示思路：既有实现直接执行 INSERT，靠数据库报
      * {@code Duplicate entry 'xxx' for key 'yyy'}；这里从异常信息里取出冲突值拼成提示。
      * 注意：本项目的新增接口都会"先查重再插入"，正常情况下不会走到这里。</p>
      */
@@ -82,7 +82,7 @@ public class GlobalExceptionHandler {
      * 数据库完整性约束异常（外键引用等），由 MyBatis-Spring 翻译而来。
      *
      * <p>典型场景：删除仍被 {@code server.fastfood_shop_name} 外键引用的店铺。
-     * Flask 版此时直接返回 500；新实现收敛为 HTTP 200 + 业务失败响应，
+     * 既有接口此时直接返回 500；新实现收敛为 HTTP 200 + 业务失败响应，
      * 前端不会因为 500 而丢失提示。</p>
      */
     @ExceptionHandler
@@ -122,7 +122,7 @@ public class GlobalExceptionHandler {
     /* ==================== 框架级错误：返回真实 HTTP 状态码 ==================== *
      *
      * 为什么单独处理：下面的 {@link #exceptionHandler(Exception)} 会把**所有**未捕获异常
-     * 收成 HTTP 200 + {"status":1000,"msg":"未知错误"}。对业务异常这是刻意的（Flask 版也是
+     * 收成 HTTP 200 + {"status":1000,"msg":"未知错误"}。对业务异常这是刻意的（既有接口也是
      * 200 + msg，前端只读 status），但 Spring MVC 自己抛出的框架级异常（路径不存在、
      * 方法不允许、参数类型不匹配）也走同一条路，就会出现下面的怪现象：
      *
@@ -132,7 +132,7 @@ public class GlobalExceptionHandler {
      *   GET /api/manager/stats/trend?days=abc    → 200 + {"status":1000,...}
      *
      * 后果是反向代理、浏览器 devtools、监控和调用方全都无法区分"接口不存在"与
-     * "业务失败"，且 README 声称"Flask 版为 404，行为一致"（Flask 未注册的路由确实
+     * "业务失败"，且 README 声称"既有接口为 404，行为一致"（未注册的路由确实
      * 返回 404）与实际不符。这里为三类框架级错误返回真实状态码。
      *
      * 响应体选择空体（<b>不</b>再包一层 status/msg）：

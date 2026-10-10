@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * 管理端「只读」接口的契约测试。
  *
- * <p>Flask 版管理端接口<b>不校验 token</b>，这里保持同样的行为（不带 token 直接调用）。</p>
+ * <p>既有接口管理端接口<b>不校验 token</b>，这里保持同样的行为（不带 token 直接调用）。</p>
  * <p>数据来自 testdb/data.sql；本类不修改数据。</p>
  *
  * <p><b>顺序上的一条真实约束</b>：本类与 {@link ManagerApiMutationTest} 共享同一个 Spring
@@ -111,7 +111,7 @@ class ManagerApiReadContractTest extends ApiContractTestSupport {
                 response.getBody());
     }
 
-    /** 物流：id=0 返回未结束；id=1 与缺省都返回已结束（Flask 的实际行为） */
+    /** 物流：id=0 返回未结束；id=1 与缺省都返回已结束（既有行为） */
     @Test
     @DisplayName("GET /api/manager/wuliu：id=0 未结束，其余取值 已结束")
     void listWuliu() {
@@ -124,13 +124,13 @@ class ManagerApiReadContractTest extends ApiContractTestSupport {
                 + "{\"order_id\": 3, \"cons_phone\": \"" + YCX_PHONE + "\", \"disp_id\": \"010100\", "
                 + "\"deliver_time\": \"15" + esc("分钟") + "\"}]}\n";
         assertEquals(endedExpected, restTemplate.getForEntity("/api/manager/wuliu?id=1", String.class).getBody());
-        // 不传 id 时 Flask 走 else 分支，同样返回已结束记录
+        // 不传 id 时 不传 id 时走默认分支，同样返回已结束记录
         assertEquals(endedExpected, restTemplate.getForEntity("/api/manager/wuliu", String.class).getBody());
         // 非 0 的任意值同样如此
         assertEquals(endedExpected, restTemplate.getForEntity("/api/manager/wuliu?id=abc", String.class).getBody());
     }
 
-    /** 管理端接口在 Flask 版不校验 token，这里保持一致 */
+    /** 管理端接口在 既有接口不校验 token，这里保持一致 */
     @Test
     @DisplayName("管理端接口不要求 token")
     void managerEndpointsDoNotRequireToken() {

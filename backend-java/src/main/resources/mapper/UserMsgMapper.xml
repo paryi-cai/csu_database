@@ -4,7 +4,7 @@
 <mapper namespace="com.csu.takeout.mapper.UserMsgMapper">
 
     <!--
-        按手机号查询用户详细信息（与 Flask 版 app.py:236 的
+        按手机号查询用户详细信息（与 既有接口:236 的
         select * from user_msg where phone=? 等价）。
 
         项目全局关闭了 map-underscore-to-camel-case，因此必须逐列显式起别名，

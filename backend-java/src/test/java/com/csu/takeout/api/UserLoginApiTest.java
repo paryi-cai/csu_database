@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 登录接口与 JWT 拦截器的端到端测试。
  *
  * <p>启动完整 Web 环境（随机端口）+ H2（MySQL 兼容模式），断言的是<b>响应体原文</b>，
- * 因此同时验证了：路径、请求参数名、响应字段名与类型、Flask 兼容的 JSON 排版、
+ * 因此同时验证了：路径、请求参数名、响应字段名与类型、统一的 JSON 排版、
  * JWT 载荷结构、以及拦截器的拦截范围。</p>
  *
  * <p>两点测试约定：</p>
@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>必须显式指定 {@code classes = CsuTakeoutApplication.class}：否则 Spring Boot 会把
  *       测试类自身当作 {@code @SpringBootConfiguration}，从测试类所在包开始扫描，
  *       导致 config/controller/handler 等生产组件全部缺失；</li>
- *   <li>期望的中文按 Flask（ensure_ascii=True）规则转义，用 {@link #esc(String)} 在运行时
+ *   <li>期望的中文按 约定的转义规则转义，用 {@link #esc(String)} 在运行时
  *       生成，避免 Java 编译器把源码中的反斜杠-u 当成自己的转义序列。</li>
  * </ul>
  */
@@ -58,7 +58,7 @@ class UserLoginApiTest {
 
     /** 管理员账号登录：响应为 code=200 + msg + token + role 四个平铺字段 */
     @Test
-    @DisplayName("管理员登录成功：字段、类型、排版与 Flask 一致")
+    @DisplayName("管理员登录成功：字段、类型、排版与既有契约一致")
     void loginAsAdmin() {
         ResponseEntity<String> response = postJson(LOGIN_URL,
                 "{\"userortel\": \"18682412818\", \"password\": \"Aa.460734909\"}");
@@ -69,23 +69,23 @@ class UserLoginApiTest {
         assertTrue(body.startsWith("{\"code\": 200, \"msg\": \"" + esc("登录成功") + "\", \"token\": \""),
                 "响应前缀不符：" + body);
         assertTrue(body.endsWith("\", \"role\": 1}\n"), "响应结尾不符：" + body);
-        // 整个响应体必须是纯 ASCII（Flask jsonify 的 ensure_ascii=True 行为）
+        // 整个响应体必须是纯 ASCII（约定的响应格式 的 非 ASCII 转义 行为）
         assertTrue(body.chars().allMatch(c -> c < 128), "响应体应不含非 ASCII 字符：" + body);
 
-        // JWT 载荷结构与 Flask auth.py 保持一致
+        // JWT 载荷结构与既有契约 保持一致
         String token = extractToken(body);
         Claims claims = JwtUtil.parseJWT(jwtProperties.getSecretKey(), jwtProperties.getIssuer(), token);
         assertEquals("wufang", claims.getIssuer());
         assertNotNull(claims.getIssuedAt());
         assertNotNull(claims.getExpiration());
 
-        // Flask 的写法是 exp = now + 1 天、iat = now - 1 天，因此 exp - iat = 2 天
+        // 既有写法是 exp = now + 1 天、iat = now - 1 天，因此 exp - iat = 2 天
         long spanSeconds = Duration.between(claims.getIssuedAt().toInstant(), claims.getExpiration().toInstant()).getSeconds();
-        assertEquals(172800L, spanSeconds, "exp - iat 应为 2 天（与 Flask auth.py 一致）");
+        assertEquals(172800L, spanSeconds, "exp - iat 应为 2 天（与既有契约一致）");
         // exp 距当前约 1 天
         long expDelta = Duration.between(Instant.now(), claims.getExpiration().toInstant()).getSeconds();
         assertTrue(Math.abs(expDelta - 86400L) < 120, "exp 应约为一天后，实际相差 " + expDelta + " 秒");
-        // iat 为"一天前"，与 Flask 一致
+        // iat 为"一天前"，与既有契约一致
         long iatAge = Duration.between(claims.getIssuedAt().toInstant(), Instant.now()).getSeconds();
         assertTrue(Math.abs(iatAge - 86400L) < 120, "iat 应为一天前，实际相差 " + iatAge + " 秒");
 
@@ -120,7 +120,7 @@ class UserLoginApiTest {
         assertEquals("{\"code\": 1000, \"msg\": \"" + esc("用户名或密码错误") + "\"}\n", response.getBody());
     }
 
-    /** 登录接口本身不在拦截范围内（Flask 版同样不校验）：不带 token 也能正常返回 */
+    /** 登录接口本身不在拦截范围内（既有接口同样不校验）：不带 token 也能正常返回 */
     @Test
     @DisplayName("登录接口不校验 token")
     void loginIsNotIntercepted() {
@@ -132,12 +132,11 @@ class UserLoginApiTest {
     /**
      * 入参首尾空白必须被去掉。
      *
-     * <p>Flask 的 app.py 写的是 {@code request.json.get("userortel").strip()}，
-     * 即手机号与密码都会先去空白。若新后端不 trim，"带空格的账号密码"在 Flask 能登录、
-     * 在新后端会失败——这是必须锁住的兼容点。</p>
+     * <p>接口契约要求对手机号与密码做 {@code .strip()}（去首尾空白）：实现必须同样 trim，
+     * 否则"带首尾空格的账号密码"会被误判为登录失败。这是必须锁住的兼容点。</p>
      */
     @Test
-    @DisplayName("登录：手机号与密码的首尾空格被忽略（对齐 Flask 的 .strip()）")
+    @DisplayName("登录：手机号与密码的首尾空格被忽略（.strip() 语义）")
     void loginTrimsWhitespace() {
         ResponseEntity<String> response = postJson(LOGIN_URL,
                 "{\"userortel\": \"  18873190398  \", \"password\": \"  aA.460734909  \"}");
@@ -172,7 +171,7 @@ class UserLoginApiTest {
     /**
      * 个人信息在 user_msg 无记录时的真实响应。
      *
-     * <p>Flask 版此时会因 {@code data[0]} 越界抛 IndexError（返回 500）；
+     * <p>既有接口此时会因 {@code data[0]} 越界抛 IndexError（返回 500）；
      * 新实现返回 {@code {"status": 200}}——{@code data} 为 null 时被
      * {@code @JsonInclude(NON_NULL)} 整个省略。本用例锁定该行为，
      * 避免文档与实现再次不一致。</p>
@@ -258,9 +257,9 @@ class UserLoginApiTest {
     }
 
     /**
-     * 按 Flask（Python json.dumps ensure_ascii=True）规则转义非 ASCII 字符。
+     * 按 约定规则（非 ASCII 一律转义）转义非 ASCII 字符。
      *
-     * <p>Jackson 使用大写十六进制（{@code \u767B}），Python 使用小写（{@code \u767b}）——
+     * <p>Jackson 使用大写十六进制（{@code \u767B}），另一种实现使用小写（{@code \u767b}）——
      * 语义等价，本项目采用 Jackson 的大写形式。这里运行时生成，避免源码里出现
      * 被 Java 编译器抢先解析的 unicode 转义。</p>
      */

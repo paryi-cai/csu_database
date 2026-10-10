@@ -73,7 +73,7 @@ class ManagerApiMutationTest extends ApiContractTestSupport {
     /**
      * 删除店铺 → 列表消失；<b>被服务员引用的店铺同样删得掉</b>（生产库没有那个外键）。
      *
-     * <p>生产库（{@code backend/db/init.sql}）的 {@code server} 表<b>没有</b>指向
+     * <p>生产库（{@code database/init.sql}）的 {@code server} 表<b>没有</b>指向
      * {@code fastfood_shop} 的外键（实测 information_schema 只有 {@code user_msg.id → user.id}
      * 一条），所以删店铺不会被引用阻止，并会留下 {@code server} 里指向不存在店铺的孤儿行。
      * 夹具曾自造这个外键，使测试锁住了一个生产上不成立的行为；现已与生产对齐。</p>
@@ -87,7 +87,7 @@ class ManagerApiMutationTest extends ApiContractTestSupport {
      * ② 夹具里只有那一条 {@code server} 记录，删了它"服务员变孤儿"就没法验证了。
      * 因此这里自己造一对「店铺 + 引用它的服务员」，验证完即可全部清干净，<b>不依赖任何跨类顺序</b>。</p>
      *
-     * <p>该孤儿行是继承自 Flask 的遗留行为，未在本次改造中修复（修复会改变既有接口语义），
+     * <p>该孤儿行是既有的遗留行为，未在本次改造中修复（修复会改变既有接口语义），
      * 已登记在 README 的「已知差异」。</p>
      */
     @Test
