@@ -1,3 +1,4 @@
+:: 一键启动：检查 Docker → 创建数据卷 → 起 MySQL/Redis/Java 后端 → 等健康 → 补齐测试账号 → 起前端
 @echo off
 chcp 65001 >nul
 setlocal enabledelayedexpansion
