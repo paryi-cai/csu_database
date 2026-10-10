@@ -26,7 +26,7 @@
 | 约束 | 具体做法 |
 | --- | --- |
 | 数据库零改动 | 表结构 / 视图 / 触发器 / `init.sql` 一行未改；统计 SQL 全部 `SELECT` |
-| 既有接口零改动 | 19 个管理端 + 10 个用户端接口的路径、参数、响应体（含 Flask 兼容排版）完全不变 |
+| 既有接口零改动 | 19 个管理端 + 10 个用户端接口的路径、参数、响应体（含 统一响应排版）完全不变 |
 | 仅新增统计接口 | 新增 `/api/manager/stats/**`，响应沿用本项目的 `{"status":200,"data":{...}}` 形态 |
 | 不升级 Vue | 仍是 Vue 2.6 + Element UI 2.15；ECharts 按需引入 5.x |
 | 图表自封装 | 不用 vue-echarts 之类封装库（Vue 2 版本维护状态不确定），自己实现 `BaseChart` |
@@ -130,7 +130,7 @@
   （视图内部已完成三表连接与 `checked` 过滤），Java 侧不写 JOIN、不做状态过滤——
   与项目既有约定一致。
 - `/api/manager/stats/**` 纳入 `JwtTokenInterceptor` 的拦截路径；
-  **既有 19 个管理端接口的鉴权行为一行未改**（Flask 原样不校验）。
+  **既有 19 个管理端接口的鉴权行为一行未改**（沿用原设计，不校验 token）。
   前端所有请求本来就会自动携带 `token` 头，因此对现有页面零影响；
   未携带/非法令牌访问统计接口返回 `401 + {"code":1000,"msg":"用户未登录"}`。
 
@@ -233,13 +233,13 @@ cd frontend\sjk; npm run serve      # http://localhost:8080
 
 | 方法 | 路径 | 作用 |
 | --- | --- | --- |
-| GET | `/api/user/usermsg` | 查询（既有，Flask 契约） |
+| GET | `/api/user/usermsg` | 查询（既有，接口契约） |
 | PUT | `/api/user/usermsg/edit` | 改 用户名 / 真实姓名 / 性别 / 年龄 / 邮箱 |
 | PUT | `/api/user/usermsg/pwd` | 改密码（复用 `UserService.changePassword`，语义与既有 `POST /api/user/pwd_chg` 完全一致） |
 
 ### 为什么不复用 POST `/api/user/usermsg`
 
-Flask 版该路径的装饰器写了 `methods=["POST", "GET"]`，但函数体里**只有 GET 分支**，
+既有接口该路径的装饰器写了 `methods=["POST", "GET"]`，但函数体里**只有 GET 分支**，
 POST 会落到隐式 `return None` → 500。契约中的"既有接口"只包含已实现的行为，
 所以不去"补全"一个原本会报错的 POST，而是新增语义明确的路径。
 
@@ -248,7 +248,7 @@ POST 会落到隐式 `return None` → 500。契约中的"既有接口"只包含
 `user_msg.phone` 是查询接口的**定位键**：
 
 ```sql
--- Flask app.py:236 / Java UserMsgMapper.xml，两边一致
+  -- UserMsgMapper.xml（与接口契约一致）
 select * from user_msg where phone = ?
 ```
 

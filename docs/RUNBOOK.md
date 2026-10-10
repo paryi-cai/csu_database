@@ -17,7 +17,7 @@
 - [第 5 章 用 IDEA 跑后端 / 跑前端](#第-5-章-用-idea-跑后端--跑前端)
 - [第 6 章 页面验收清单](#第-6-章-页面验收清单)
 - [第 7 章 触发器与视图演示脚本（面试重点）](#第-7-章-触发器与视图演示脚本面试重点)
-- [第 8 章 接口契约对照（Flask ↔ Spring Boot）](#第-8-章-接口契约对照flask--spring-boot)
+- [第 8 章 接口契约测试](#第-8-章-接口契约测试)
 - [第 9 章 可选：DataX 跨数据库迁移复现](#第-9-章-可选datax-跨数据库迁移复现)
 - [第 10 章 停止 / 重启 / 彻底重置](#第-10-章-停止--重启--彻底重置)
 - [第 11 章 排查表（实测踩过的所有坑）](#第-11-章-排查表实测踩过的所有坑)
@@ -55,7 +55,7 @@
 1. **只需要一个数据库**：MySQL。`other_database/`、`mysql2mariadb_datax_json/`、`mysql2postgresql_datax_json/` 是"跨库迁移实验"的产物与配置，**系统运行时不使用**，里面的 MariaDB / PostgreSQL 不需要启动。
 2. **前端不需要编译**：`npm run serve` 起的是开发服务器，改代码即时热更新，不需要 `npm run build`。
 3. **订单状态由数据库负责**：`oorder.checked`（0 未派发 / 1 派送中 / 2 已送达）由触发器与视图维护，Java 代码里**没有**更新该字段的 SQL。详见第 7 章。
-4. **Flask 后端与 Java 后端并存**：`backend/`（Flask，保留作对照）与 `backend-java/`（Spring Boot）都监听 5000，**同一时间只能起一个**。两者响应契约逐字节兼容，前端不用改。
+4. **后端为 Spring Boot 3（`backend-java/`）**：MySQL / Redis 由 Docker 提供，后端监听 5000；前端 Axios 直连 `127.0.0.1:5000`。
 
 ---
 
@@ -203,7 +203,7 @@ $login
 
 ### 步骤 2：补齐测试账号
 
-`backend/db/init.sql`（容器首次初始化脚本）里的示例账号是 `iu` / `mty`，与 README 使用的 `CMX` / `YCX` **不一致**。为不改动 `init.sql`，用仓库里的幂等脚本补齐：
+`database/init.sql`（容器首次初始化脚本）里的示例账号是 `iu` / `mty`，与 README 使用的 `CMX` / `YCX` **不一致**。为不改动 `init.sql`，用仓库里的幂等脚本补齐：
 
 ```powershell
 docker exec -i csu_db-mysql-1 mysql -uroot -p123456 caimingxuan < tools\seed_test_accounts.sql
@@ -302,7 +302,7 @@ Navicat → 右键连接 → **运行 SQL 文件** → 选：
 D:\Desktop\面试\数据库项目\csu_database-master\database\caimingxuan.sql
 ```
 
-> ⚠️ 用这份而**不要**用 `backend/db/init.sql`：前者自带 `CMX` / `YCX` 账号，后者是 `iu` / `mty`。
+> ⚠️ 用这份而**不要**用 `database/init.sql`：前者自带 `CMX` / `YCX` 账号，后者是 `iu` / `mty`。
 > 前者还是**完整导出**（含视图、触发器、外键与数据），一份就够。
 
 ---
@@ -364,7 +364,7 @@ csu-takeout server started, API: http://localhost:5000  docs: http://localhost:5
 | `18682412818` / `Aa.460734909` → 登录 | 提示"登录成功"，跳转管理端 `/manage` |
 | 故意输错密码 | 提示"用户名或密码错误" |
 
-> 页面上的"注册""忘记密码"**点了没反应是正常的**：对应接口在原 Flask 后端里处于注释状态（返回 404），前端也未做错误处理。Java 版遵循"不臆造未实现行为"的原则，同样未实现这三个接口。
+> 页面上的"注册""忘记密码"**点了没反应是正常的**：对应接口未实现（返回 404），前端也未提供入口；遵循"不臆造未实现行为"的原则，后端不提供这三个接口。
 
 ### 6.2 用户端 `/user`（用 `18873190398 / aA.460734909` 登录）
 
@@ -457,48 +457,20 @@ SELECT shop_name, m_sale_v FROM fastfood_shop WHERE shop_name = '大美鸡公煲
 
 ---
 
-## 第 8 章 接口契约对照（Flask ↔ Spring Boot）
+## 第 8 章 接口契约测试
 
-用于证明"重构后响应完全一致"。**需要两个后端同时可访问**（端口错开）。
+全部接口契约由 `backend-java/src/test` 下的 **82 个用例**覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
 
-### 8.1 启动两个后端
-
-```powershell
-# 新版（Spring Boot）在 5000
-docker compose -p csu_db -f backend-java/docker-compose.yml up -d --build
-
-# 旧版（Flask）需要另起在 5001：
-#   方式 A：JDK 不用，装 Python 3.10 后
-#     cd backend
-#     修改 app.py 末尾端口为 5001（或用环境变量），pip install -r requirements.txt，python app.py
-#   方式 B：改 backend/docker-compose.yml 的端口映射为 "5001:5000" 后
-#     cd backend && docker compose -p csu_db_flask up -d
-```
-
-> 注意：两个后端**连的是同一个 MySQL**，所以写操作会互相影响；对照脚本中的写接口用例使用了不冲突的名称（`对照测试店铺` / `990001`），可重复执行。
-
-### 8.2 运行对照脚本
+- 响应体**原文**断言（空格排版、末尾换行、非 ASCII 转义、空数组）
+- JWT 载荷结构与短密钥签名（手工复算 HMAC 验证补零不改变结果）
+- 全部接口的端到端契约（401 / 框架级 404·405·400 / 空列表 / 越权归属校验等边界）
 
 ```powershell
 cd "D:\Desktop\面试\数据库项目\csu_database-master"
-
-# 全量（含写接口）
-powershell -ExecutionPolicy Bypass -File tools\compare_api.ps1 `
-    -FlaskBase http://127.0.0.1:5001 -JavaBase http://127.0.0.1:5000
-
-# 只比对只读接口（不动数据库）
-powershell -ExecutionPolicy Bypass -File tools\compare_api.ps1 -SkipWrites
+powershell -ExecutionPolicy Bypass -File backend-java\tools\build.ps1
 ```
 
-脚本逐接口比对三个层级：**HTTP 状态码 → 语义 JSON → 规范化后的响应体原文**，结果写入 `tools/compare-results/compare-*.json`。
-
-### 8.3 关于已知差异
-
-| 差异 | 说明 |
-|---|---|
-| `\u767B`（Jackson）vs `\u767b`（Python） | unicode 转义的十六进制**大小写**不同，语义完全等价；脚本已对大小写做归一化，会归类为 `KNOWN-DIFF` 而非失败 |
-| 令牌缺失/非法 | Flask 返回 500 HTML；Java 版返回 401 + JSON（前端 axios 两个分支都不会崩） |
-| 数据库异常 | Flask 直接 500；Java 版返回 200 + `{"status":1000,"msg":"未知错误"}`，前端能正常提示 |
+> 触发器副作用（销量增减、`checked` 置 1）无法在 H2 上表达，需在真实 MySQL 上按第 7 章的演示脚本验证。
 
 ---
 
@@ -522,7 +494,7 @@ docker run -d --name postgres-datax -p 5432:5432 `
 
 DataX 是阿里开源的独立 Java 工具（不是 Docker 镜像）：
 
-<https://github.com/alibaba/DataX> → 下载 `datax.tar.gz` → 解压 → 用 `python datax.py <job.json>` 执行。
+<https://github.com/alibaba/DataX> → 下载 `datax.tar.gz` → 解压 → 通过自带的 `datax.py` 启动器执行任务。
 
 ### 9.3 执行迁移任务
 
@@ -530,7 +502,7 @@ DataX 是阿里开源的独立 Java 工具（不是 Docker 镜像）：
 
 ```powershell
 # 示例：迁移 user 表到 MariaDB
-python datax.py ..\mysql2mariadb_datax_json\m2m_user.json
+datax.py ..\mysql2mariadb_datax_json\m2m_user.json
 # 其余 7 个同理：fastfood_shop / oorder / orderway / server / dispatcher / wuliu / user_msg
 ```
 
@@ -618,7 +590,7 @@ docker compose -p csu_db -f backend-java/docker-compose.yml up -d --build backen
 | 登录提示"用户名或密码错误" | 库里的账号还是 `iu`/`mty`，第 2 步没执行成功 | 重跑 `tools\seed_test_accounts.sql`，再用 `SELECT id,username,role FROM user` 确认 |
 | IDEA 启动报 `Port 5000 was already in use` | Docker 里的 backend 容器也占着 5000 | `docker compose -p csu_db -f backend-java/docker-compose.yml stop backend` |
 | 后端启动报 `Communications link failure` / 连不上数据库 | MySQL 容器没起，或端口不对 | 确认 `docker ps` 里 mysql 是 `healthy`；IDEA 里默认走 `localhost:3307` |
-| 删除店铺后 `server` 表里留下指向它的记录 | 生产库 `server` 表**没有**指向 `fastfood_shop` 的外键，删除不会被引用阻止 | **既有遗留行为**（Flask 同样如此），未在本次改造中修复——修它等于改变既有接口语义。删除前请先解雇该店铺的服务员，避免留下孤儿行 |
+| 删除店铺后 `server` 表里留下指向它的记录 | `server` 表**没有**指向 `fastfood_shop` 的外键，删除不会被引用阻止 | **既有遗留行为**，未做修改——修它等于改变接口语义。删除前请先解雇该店铺的服务员，避免留下孤儿行 |
 | `物流管理 → 已完成` 页一直为空 | 无任何接口/触发器能修改 `wuliu.ended` | **既有现象**，按契约保留 |
 
 ### 11.4 Navicat 类
@@ -637,7 +609,7 @@ docker compose -p csu_db -f backend-java/docker-compose.yml up -d --build backen
 | 现象 | 根因 | 修复 |
 |---|---|---|
 | 后端容器启动后**固定空等约 120 秒**才拉起 Java，日志却打印 `MySQL is ready` | `docker/wait-for-mysql.sh` 用了 `#!/bin/sh` + `/dev/tcp`，而 jammy 镜像的 `/bin/sh` 是 dash，**不支持 `/dev/tcp`** → 探测永远失败，只能靠超时兜底，且超时后仍误报 ready。叠加后果：Dockerfile 的 HEALTHCHECK 窗口正好也是 120s，容器可能被标记 `unhealthy` | 改为 `#!/bin/bash` + `timeout 2 bash -c "exec 3<>/dev/tcp/host/port"`；超时时输出明确的 `WARNING: ... not reachable after Ns`，不再误报。实测：对端只接受连接、不发数据也不关闭时，**153 ms 即返回成功**（详见下方"探测方式的选择"） |
-| 带首尾空格的账号密码在 Flask 能登录、Java 登不上 | Flask 的 `app.py` 对 `userortel` / `password` 调用了 `.strip()`，早期 Java 版漏了 | `UserServiceImpl` 对手机号与密码做 `strip()`（`null` 安全）；`UserLoginApiTest#loginTrimsWhitespace` 锁定该行为 |
+| 带首尾空格的账号密码登录失败 | 接口需要对入参去首尾空白（`.strip()` 语义） | `UserServiceImpl` 对手机号与密码做 `strip()`（`null` 安全）；`UserLoginApiTest#loginTrimsWhitespace` 锁定该行为 |
 | 「重复主键/唯一键」的错误提示分支实际不可达 | MyBatis-Spring 会把 `SQLException` 翻译成 Spring 的 `DataAccessException` 家族（`DuplicateKeyException` / `DataIntegrityViolationException`），早期只捕获了原始的 `SQLIntegrityConstraintViolationException`，该 handler 永远不会命中 | 改为捕获 `DuplicateKeyException` 与 `DataIntegrityViolationException`，从异常信息中提取 `Duplicate entry 'xxx'` 的冲突值拼成提示；原始 JDBC 异常保留为兜底 |
 | `mvn` 构建耗时偏长 | `.dockerignore` 未排除 `src/test`（`-DskipTests` 只是不运行测试，**仍会编译**） | `.dockerignore` 增加 `src/test/`（若将来要在容器内跑测试，删掉该行即可） |
 | `spring.mvc.*` 等 Boot MVC 配置不生效 | `WebMvcConfiguration` 继承了 `WebMvcConfigurationSupport`，会**关闭 Boot 的 Web MVC 自动配置** | 改为 `implements WebMvcConfigurer`；`/doc.html`、`/webjars/**`、拦截器、消息转换器均已实机复验正常 |
@@ -653,7 +625,7 @@ docker compose -p csu_db -f backend-java/docker-compose.yml up -d --build backen
 >   而服务员行仍在（即孤儿行确实产生）。用完即清理，不碰夹具数据。
 > - **曾经的说法（"数据库拒绝删除、返回未知错误、测试刻意锁定"）是错的**，源头是 H2
 >   测试夹具自造了生产上并不存在的外键，让测试锁住了一个假行为。夹具已与生产对齐。
-> - 这属继承自 Flask 的遗留缺陷（Flask 同样只按 `shop_name` 删除，不做引用检查），
+> - 这属既有遗留缺陷（删除只按 `shop_name`，不做引用检查），
 >   **本次改造未修**——修它需要新增"删除前检查引用"的逻辑，会改变既有接口语义。
 
 #### 探测方式的选择（为什么不用 `curl telnet://`）
@@ -679,7 +651,7 @@ docker compose -p csu_db -f backend-java/docker-compose.yml up -d --build backen
 | 服务 | 地址 | 说明 |
 |---|---|---|
 | Vue 前端 | <http://localhost:8080> | `npm run serve` |
-| Java / Flask 后端 | <http://localhost:5000> | 两者只能起一个 |
+| 后端 API | <http://localhost:5000> | Spring Boot |
 | 接口文档（Knife4j） | <http://localhost:5000/doc.html> | 含用户端 / 管理端两组 |
 | OpenAPI JSON | <http://localhost:5000/v3/api-docs/swagger-config> | |
 | MySQL | `localhost:3307` | 容器内 3306；库名 `caimingxuan` |

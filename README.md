@@ -1,8 +1,8 @@
 # CSU 数据库课程设计 —— 校园快餐订餐管理系统
 
-一个基于 **MySQL + Flask + Vue** 的校园快餐订餐管理系统，实现用户订餐、订单流转、配送管理等功能，并演示了视图、触发器、外键等数据库特性，以及使用 DataX 将 MySQL 数据迁移至 MariaDB / PostgreSQL 的跨数据库实践。
+一个基于 **MySQL + Spring Boot 3 + Vue 2** 的校园快餐订餐管理系统，实现用户订餐、订单流转、配送管理等功能，并演示了视图、触发器、外键等数据库特性，以及使用 DataX 将 MySQL 数据迁移至 MariaDB / PostgreSQL 的跨数据库实践。
 
-> **本项目现已提供 Java（Spring Boot 3）后端**，与原 Flask 后端并存、接口契约完全兼容，原 Vue 前端一行不改即可切换。详见下方「[Java 版后端](#java-版后端spring-boot-3)」章节。
+> 后端为 Spring Boot 3.4（`backend-java/`，配 82 个接口契约测试），前端为 Vue 2 单页应用（用户端 + 管理端数据看板）。
 
 ## 功能特性
 
@@ -23,9 +23,8 @@
 
 | 层次 | 技术 |
 | --- | --- |
-| 前端 | Vue 2.6、Vue Router、Element UI、Axios |
-| 后端（原） | Python 3.10、Flask 2.3、Flask-SQLAlchemy、PyMySQL、PyJWT、Redis |
-| 后端（新） | JDK 17、Spring Boot 3.4.4、MyBatis、Druid、PageHelper、Redis、Knife4j、JJWT |
+| 前端 | Vue 2.6、Vue Router、Element UI、ECharts 5、Axios |
+| 后端 | JDK 17、Spring Boot 3.4.4、MyBatis、Druid、PageHelper、Redis、Knife4j、JJWT |
 | 数据库 | MySQL 8.0（Docker 部署），含视图、触发器、外键 |
 | 部署 | Docker Compose（MySQL + Redis + Backend） |
 | 数据迁移 | DataX（MySQL → MariaDB / PostgreSQL） |
@@ -34,21 +33,11 @@
 
 ```
 csu_database-master/
-├── backend/                          # Flask 后端（保留作对照实现，响应与 Java 版逐字节一致）
-│   ├── app.py                        # 全部路由与业务逻辑（约 30 个接口）
-│   ├── auth.py                       # JWT 生成与解析（PyJWT / HS256 / issuer=wufang）
-│   ├── config.py                     # 数据库 / Redis 配置（支持环境变量覆盖）
-│   ├── db/init.sql                   # 容器初始化：8 张表 + 2 个视图 + 6 个触发器 + 示例数据
-│   ├── Dockerfile                    # python:3.10-slim 镜像
-│   ├── docker-compose.yml            # MySQL + Redis + Flask 后端编排
-│   ├── wait-for-mysql.sh             # 等待 MySQL 就绪后启动服务
-│   ├── requirements.txt              # Python 依赖（Flask 2.3 / SQLAlchemy / PyMySQL / PyJWT / redis）
-│   └── main.py                       # PyCharm 自动生成的示例文件，未使用（可删）
-├── backend-java/                     # Java 后端（Spring Boot 3.4.4，主后端；与 Flask 版逐字节兼容）
+├── backend-java/                     # 后端（Spring Boot 3.4.4 + MyBatis + Redis + JWT）
 │   ├── src/main/java/com/csu/takeout/
 │   │   ├── controller/user、manager/ # 接口层：登录 / 订单 / 个人信息；店铺 / 服务员 / 配送员 / 物流 / 数据统计
 │   │   ├── service(+impl) / mapper/  # 业务层与 MyBatis 持久层（SQL 全部在 resources/mapper/*.xml）
-│   │   ├── json/                     # Flask 兼容 JSON 序列化器（空格排版、末尾换行、非 ASCII 转义）
+│   │   ├── json/                     # 统一 JSON 序列化器（空格排版、末尾换行、非 ASCII 转义）
 │   │   ├── interceptor/ context/     # JWT 拦截器（请求头 token）+ ThreadLocal 当前用户
 │   │   └── entity / dto / vo / result / handler / config / constant / utils
 │   ├── src/main/resources/           # application.yml（默认 localhost:3307）+ mapper XML
@@ -76,11 +65,10 @@ csu_database-master/
 │   ├── DESIGN-STATS-DASHBOARD.md     # 数据看板设计说明（口径、组件划分、交互）
 │   └── preview/                      # 11 张页面截图（README 与文档引用）
 ├── tools/                            # 根级验收与数据脚本
-│   ├── compare_api.ps1               # Flask ↔ Spring Boot 逐接口响应对照脚本
 │   ├── seed_test_accounts.sql        # 幂等补齐测试账号 CMX / YCX
 │   ├── gen_seed_demo_stats.ps1       # 生成「统计看板演示数据」SQL 的脚本（近 N 天批量订单）
 │   └── seed_demo_stats.sql           # 生成结果（纯 INSERT + UPDATE，可直接执行）
-├── database/caimingxuan.sql          # 数据库完整导出（表、视图、触发器、数据）
+├── database/                         # 数据库脚本：caimingxuan.sql 完整导出 / init.sql 容器初始化
 ├── other_database/                   # 迁移后的 MariaDB / PostgreSQL 导出（PG 版含 plpgsql 触发器）
 ├── mysql2mariadb_datax_json/         # MySQL → MariaDB 的 DataX 任务配置（8 张表，凭据加密）
 ├── mysql2postgresql_datax_json/      # MySQL → PostgreSQL 的 DataX 任务配置（8 张表）
@@ -141,7 +129,6 @@ npm run serve
 
 访问地址：前端 http://localhost:8080 ，后端 API http://localhost:5000 ，接口文档 http://localhost:5000/doc.html 。
 
-> 想运行原 Flask 后端时，改用 `cd backend && docker compose -p csu_db up -d`（端口与数据卷完全相同，两者不会互相干扰，但同一时间只能起一个占用 5000 端口的容器）。
 
 ## 数据库设计
 
@@ -184,7 +171,7 @@ npm run serve
 | GET | `/api/manager/wuliu` | 物流记录（按 ended 筛选） |
 | GET | `/api/manager/sending` `/api/manager/sended` | 派送中 / 已送达订单 |
 
-除登录外，需要认证的接口通过请求头 `token` 传递 JWT，由 `backend/auth.py` 解析获取用户手机号。
+除登录外，需要认证的接口通过请求头 `token` 传递 JWT，由后端拦截器（`JwtTokenInterceptor`）解析获取用户手机号。
 
 ## 跨数据库数据迁移（DataX）
 
@@ -199,8 +186,8 @@ npm run serve
 
 ## 说明
 
-- 数据库连接信息可通过环境变量覆盖（`DB_HOST`、`DB_PORT`、`DB_USER`、`DB_PASSWORD`、`DB_NAME`、`REDIS_HOST`、`REDIS_PORT`），默认值见 `backend/config.py`。
-- `database/caimingxuan.sql` 为完整结构 + 示例数据（含 CMX / YCX 账号），`backend/db/init.sql` 为容器首次启动时自动执行的初始化脚本（示例账号为 iu / mty）。
+- 数据库连接信息可通过环境变量覆盖（`DB_HOST`、`DB_PORT`、`DB_USER`、`DB_PASSWORD`、`DB_NAME`、`REDIS_HOST`、`REDIS_PORT`），默认值见 `backend-java/src/main/resources/application.yml`。
+- `database/caimingxuan.sql` 为完整结构 + 示例数据（含 CMX / YCX 账号），`database/init.sql` 为容器首次启动时自动执行的初始化脚本（示例账号为 iu / mty）。
 - 示例账号：`CMX / Aa.460734909`（role=1，管理端）、`YCX / aA.460734909`（role=0，用户端）。若用 `init.sql` 初始化，需执行 `tools/seed_test_accounts.sql` 补齐这两个账号。
   > ⚠️ **登录时填的是「手机号 + 密码」，不是用户名**：后端 SQL 是 `where telephone = ? and password = ?`
   > （见 `backend-java/src/main/resources/mapper/UserMapper.xml`），`username` 字段不参与登录。
@@ -210,10 +197,10 @@ npm run serve
 
 ---
 
-# Java 版后端（Spring Boot 3）
+# 后端实现（Spring Boot 3）
 
-将 `backend/`（Flask）重构为 Spring Boot 3 的版本，位于 `backend-java/`。
-**原 Flask 后端保留不动**，两者可分别启动（都监听 5000，同一时间只起一个），响应契约逐字节兼容。
+位于 `backend-java/`：Spring Boot 3.4.4 + MyBatis + Druid + Redis + JWT，
+按用户端 / 管理端两组提供 REST 接口，响应排版与前端契约逐字节一致（见下方「关键设计」）。
 
 ## 技术栈与版本选择
 
@@ -249,10 +236,10 @@ com.csu.takeout
 ├── mapper/                      MyBatis Mapper 接口（XML 在 resources/mapper/）
 ├── entity/                      User、UserMsg、Order、FastfoodShop、Server、Dispatcher、Wuliu
 ├── dto/                         请求参数与内部传输对象
-├── vo/                          响应视图对象（键名即 Flask 响应键名）
+├── vo/                          响应视图对象（键名即契约响应键名）
 ├── result/                      Result（code/msg）、TableResult（status/tabledata）、
 │                                DataResult（status/data）、UserLoginResult
-├── json/                        FlaskJsonObjectMapper / FlaskJsonMessageConverter / FlaskJsonWriter
+├── json/                        UnifiedJsonObjectMapper / UnifiedJsonMessageConverter / UnifiedJsonWriter
 ├── interceptor/                 JwtTokenInterceptor（token 请求头）
 ├── handler/                     GlobalExceptionHandler
 ├── exception/                   BaseException 及子类
@@ -262,27 +249,27 @@ com.csu.takeout
 └── utils/                       JwtUtil
 ```
 
-## 关键设计：与 Flask 响应的逐字节兼容
+## 关键设计：统一的 JSON 响应排版
 
-Flask 的 `jsonify` 输出格式与 Jackson 默认输出差异较大，为做到"原前端不改一行、响应可逐字节对比"，实现了三个组件：
+Jackson 默认输出与前端依赖的响应格式差异较大（紧凑无空格、无末尾换行、中文不转义）。为了让前端拿到稳定、可逐字节断言的响应体，实现了三个组件：
 
-| 差异点 | Flask（Werkzeug 2.3） | Jackson 默认 | 本项目处理 |
+| 差异点 | 约定格式 | Jackson 默认 | 本项目处理 |
 | --- | --- | --- | --- |
-| 冒号/逗号后空格 | `{"status": 200, "msg": "x"}` | `{"status":200,"msg":"x"}` | `FlaskJsonObjectMapper` 内置自定义 `PrettyPrinter` |
+| 冒号/逗号后空格 | `{"status": 200, "msg": "x"}` | `{"status":200,"msg":"x"}` | `UnifiedJsonObjectMapper` 内置自定义 `PrettyPrinter` |
 | 响应体末尾换行 | 有一个 `\n` | 无 | 同上（在根层对象闭合时补齐） |
 | 空数组 | `[]` | `[]` | 保持一致 |
 | 非 ASCII 字符 | 转义为 `\uXXXX` | 原样输出 UTF-8 | 工厂特性 `ESCAPE_NON_ASCII` |
-| **转义十六进制大小写** | 小写 `\u767b` | 大写 `\u767B` | **唯一已知外观差异**，语义等价，见下方说明 |
+| 转义十六进制大小写 | 部分实现大写 `\u767B`、部分小写 `\u767b` | 大写 `\u767B` | 统一用大写，语义等价（JSON 规范允许混用） |
 | 字段命名 | `snake_case`（`order_id`） | Java 属性名 | 全局 `SNAKE_CASE` 命名策略 + 个别字段 `@JsonProperty` |
 | 请求字段命名 | `snake_case` | Java 属性名 | 命名策略**对反序列化同样生效**（实测：无注解的 `shopName` 也能被 `shop_name` 填上），但请求 DTO 仍**全部显式标注** `@JsonProperty`——显式声明是契约，不依赖策略的隐式行为 |
 
-> **关于 `\u767b` 与 `\u767B`**：JSON 规范允许十六进制大小写混用，浏览器 / Axios / 任何解析器结果完全一致。
+> **关于十六进制大小写**：JSON 规范允许 `\u767B` / `\u767b` 混用，浏览器 / Axios / 任何解析器结果完全一致。
 > 实测确认 jackson-core 2.18.3 的 `ObjectMapper._configAndWriteValue()` 会执行
 > `if (!isEnabled(ESCAPE_NON_ASCII)) generator.setCharacterEscapes(null)`，
 > 即"不开启该特性就无法保留自定义转义表"，而开启后走内置的大写分支，二者不可兼得。
-> 这里选择**保证转义行为正确**，`tools/compare_api.ps1` 会对十六进制大小写做归一化后比对。
+> 这里选择**保证转义行为正确**，统一输出大写形式。
 
-### 响应结构的三种形态（与 Flask 一一对应）
+### 响应结构的三种形态
 
 | 形态 | 使用接口 | 结构 |
 | --- | --- | --- |
@@ -294,18 +281,18 @@ Flask 的 `jsonify` 输出格式与 Jackson 默认输出差异较大，为做到
 
 ## JWT 实现细节
 
-| 项 | Flask（auth.py） | Java 版 |
-| --- | --- | --- |
-| 算法 | HS256（PyJWT） | HS256（JJWT 0.12.6） |
-| 密钥 | 硬编码 `12asdffa2323` | `csu.jwt.secret-key`，默认同值，可用 `JWT_SECRET` 覆盖 |
-| claims | `data`（含 id/username/password/telephone）、`exp`（now+1天）、`iat`（now−1天）、`iss`（`wufang`） | 完全一致（`iat` 也刻意设为"昨天"） |
-| 传输 | 请求头 `token` | 同 |
-| 校验范围 | 仅 6 个用户端接口 | 同（见 `WebMvcConfiguration.JWT_PATH_PATTERNS`） |
-| 校验失败 | 抛异常 → 500 HTML | 拦截器直接写 401 + `{"code":1000,"msg":"用户未登录"}` |
+| 项 | 说明 |
+| --- | --- |
+| 算法 | HS256（JJWT 0.12.6） |
+| 密钥 | `csu.jwt.secret-key`（默认 `12asdffa2323`，生产用 `JWT_SECRET` 覆盖） |
+| claims | `data`（id/username/password/telephone）、`exp`（now+1天）、`iat`（now−1天）、`iss`（`wufang`） |
+| 传输 | 请求头 `token`（自定义头，不是 `Authorization: Bearer`） |
+| 校验范围 | 6 个用户端接口 + `/api/user/usermsg/**` + `/api/manager/stats/**`（见 `WebMvcConfiguration.JWT_PATH_PATTERNS`） |
+| 校验失败 | 拦截器直接写 401 + `{"code":1000,"msg":"用户未登录"}` |
 
 **两个实现要点：**
 
-1. **短密钥处理**：Flask 的密钥只有 96 位，而 JJWT 按 RFC 7518 强制 HMAC-SHA256 密钥 ≥256 位，签名与验签都会抛 `WeakKeyException`。解决方式是构造 `SecretKeySpec` 并补零到 32 字节——RFC 2104 规定 HMAC 对短密钥本就补零至分组长度，因此**实际参与 HMAC 的密钥内容不变**，两个后端签发的 token 可以互相解析。`JwtUtilTest` 中用独立手工复算 HMAC 的方式验证了这一点。
+1. **短密钥处理**：默认密钥 `12asdffa2323` 仅 96 位，而 JJWT 按 RFC 7518 强制 HMAC-SHA256 密钥 ≥256 位，签名与验签都会抛 `WeakKeyException`。解决方式是构造 `SecretKeySpec` 并补零到 32 字节——RFC 2104 规定 HMAC 对短密钥本就补零至分组长度，因此**实际参与 HMAC 的密钥内容不变**；`JwtUtilTest` 用独立手工复算 HMAC 的方式验证了补零不改变签名结果。
 2. **拦截器不抛异常**：实测确认 `preHandle` 中抛出的异常**不会**进入 `@RestControllerAdvice`（会绕过 DispatcherServlet 的异常解析链，最终返回 200 + "未知错误"），因此改为在拦截器内显式写出 401 响应。
 
 ## 数据库职责边界（Java 侧零重复实现）
@@ -326,44 +313,18 @@ Flask 的 `jsonify` 输出格式与 Jackson 默认输出差异较大，为做到
 
 - `src/main/resources/application.yml`：占位符 + 默认值（默认 `localhost:3307` / `localhost:6379`，与 compose 的端口映射一致，本地 `mvn spring-boot:run` 开箱即用）
 - `src/main/resources/application-local.yml.example`：模板，复制为 `application-local.yml` 后可覆盖（该文件已被 `.gitignore` 忽略，用于存放真实密钥）
-- Docker 环境通过环境变量注入，**变量名与 Flask 版完全一致**：`DB_HOST`、`DB_PORT`、`DB_USER`、`DB_PASSWORD`、`DB_NAME`、`REDIS_HOST`、`REDIS_PORT`（另加 `SERVER_PORT`、`JWT_SECRET`）
+- Docker 环境通过环境变量注入，**变量名与契约完全一致**：`DB_HOST`、`DB_PORT`、`DB_USER`、`DB_PASSWORD`、`DB_NAME`、`REDIS_HOST`、`REDIS_PORT`（另加 `SERVER_PORT`、`JWT_SECRET`）
 
 ### Redis 的实际角色
 
-Flask 版中 Redis 仅被"发送短信验证码"相关代码使用，而该部分路由在 `app.py` 中**处于注释状态**（`/api/user/register/send_sms`、`/api/user/register/test`、`/api/user/findback`），前端点"获取验证码"实际会收到 404。
-因此 Java 版**同样不实现这三个接口**（不臆造行为），只保留 Redis 依赖与配置（`RedisConstant` 登记既有的 `valid_code:{手机号}` 命名与 600 秒 TTL），并保留 Redis 服务的编排。
+Redis 目前仅预留给"发送短信验证码"场景：`/api/user/register/send_sms`、`/api/user/register/test`、`/api/user/findback` 三个接口未实现，前端点"获取验证码"会收到 404（前端也未提供入口）。
+后端**不实现这三个接口**（不臆造行为），只保留 Redis 依赖与配置（`RedisConstant` 登记 `valid_code:{手机号}` 命名与 600 秒 TTL）与 Redis 服务编排。
 
-## 接口对照表（原接口 → 新实现）
+## 接口一览
 
-| 方法 | 原 Flask 接口（`backend/app.py`） | 新实现（`backend-java/.../com/csu/takeout/`） |
-| --- | --- | --- |
-| POST | `/api/user/login`（L37） | [UserController.java:44](../backend-java/src/main/java/com/csu/takeout/controller/user/UserController.java#L44) |
-| GET | `/api/user/shop`（L125） | [UserShopController.java:34](../backend-java/src/main/java/com/csu/takeout/controller/user/UserShopController.java#L34) |
-| POST | `/api/user/addorder`（L140） | [UserOrderController.java:50](../backend-java/src/main/java/com/csu/takeout/controller/user/UserOrderController.java#L50) |
-| GET | `/api/user/unsend`（L168） | [UserOrderController.java:62](../backend-java/src/main/java/com/csu/takeout/controller/user/UserOrderController.java#L62) |
-| POST | `/api/user/unsend`（L181） | [UserOrderController.java:72](../backend-java/src/main/java/com/csu/takeout/controller/user/UserOrderController.java#L72) |
-| DELETE | `/api/user/unsend`（L191） | [UserOrderController.java:85](../backend-java/src/main/java/com/csu/takeout/controller/user/UserOrderController.java#L85) |
-| GET | `/api/user/sending`（L198） | [UserOrderController.java:95](../backend-java/src/main/java/com/csu/takeout/controller/user/UserOrderController.java#L95) |
-| GET | `/api/user/sended`（L215） | [UserOrderController.java:105](../backend-java/src/main/java/com/csu/takeout/controller/user/UserOrderController.java#L105) |
-| GET | `/api/user/usermsg`（L231） | [UserMsgController.java:36](../backend-java/src/main/java/com/csu/takeout/controller/user/UserMsgController.java#L36) |
-| POST | `/api/user/pwd_chg`（L243） | [UserController.java:67](../backend-java/src/main/java/com/csu/takeout/controller/user/UserController.java#L67) |
-| GET | `/api/manager/shop`（L263） | [ManagerShopController.java:39](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerShopController.java#L39) |
-| POST | `/api/manager/shop`（L270 / L284） | [ManagerShopController.java:55](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerShopController.java#L55)（按 `action` 分支） |
-| DELETE | `/api/manager/shop`（L293） | [ManagerShopController.java:87](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerShopController.java#L87) |
-| GET | `/api/manager/server`（L303） | [ManagerServerController.java:44](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerServerController.java#L44) |
-| POST | `/api/manager/server`（L316） | [ManagerServerController.java:63](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerServerController.java#L63) |
-| DELETE | `/api/manager/server`（L329） | [ManagerServerController.java:73](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerServerController.java#L73) |
-| GET | `/api/manager/dispatcher`（L339） | [ManagerDispatcherController.java:35](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerDispatcherController.java#L35) |
-| POST | `/api/manager/dispatcher`（L346） | [ManagerDispatcherController.java:48](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerDispatcherController.java#L48) |
-| DELETE | `/api/manager/dispatcher`（L360） | [ManagerDispatcherController.java:59](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerDispatcherController.java#L59) |
-| GET | `/api/manager/wuliu`（L367） | [ManagerWuliuController.java:36](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerWuliuController.java#L36) |
-| GET | `/api/manager/unsend`（L387） | [ManagerOrderController.java:43](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerOrderController.java#L43) |
-| POST | `/api/manager/unsend`（L405） | [ManagerOrderController.java:63](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerOrderController.java#L63) |
-| GET | `/api/manager/sending`（L418） | [ManagerOrderController.java:74](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerOrderController.java#L74) |
-| GET | `/api/manager/sended`（L432） | [ManagerOrderController.java:84](../backend-java/src/main/java/com/csu/takeout/controller/manager/ManagerOrderController.java#L84) |
-| POST | `/api/user/register/send_sms`（L59，已注释） | **不实现**，返回 **HTTP 404**（与 Flask 一致） |
-| POST | `/api/user/register/test`（L100，已注释） | **不实现**，返回 **HTTP 404**（与 Flask 一致） |
-| POST | `/api/user/findback`（L86，已注释） | **不实现**，返回 **HTTP 404**（前端未调用） |
+完整接口见上方「主要 API」表，可交互的接口文档（Knife4j）在 <http://localhost:5000/doc.html>。
+
+> 注册 / 找回密码相关的三个路由（`/api/user/register/send_sms`、`/api/user/register/test`、`/api/user/findback`）未实现，返回 HTTP 404（前端也未提供入口）。
 
 ## 本地构建与测试
 
@@ -378,30 +339,21 @@ powershell -ExecutionPolicy Bypass -File backend-java\tools\build.ps1 -SkipTests
 测试无需 MySQL / Docker：使用 H2 的 MySQL 兼容模式（`src/test/resources/testdb/`），覆盖
 
 - 响应体**原文**断言（空格排版、末尾换行、unicode 转义、空数组）
-- JWT 载荷结构与"与 PyJWT 逐字节一致"（手工复算 HMAC）
-- 20 个接口的端到端契约（含 401、外键约束、空列表等边界）
+- JWT 载荷结构与短密钥签名（手工复算 HMAC 验证补零不改变结果）
+- 全部接口的端到端契约（含 401、框架级 404/405/400、空列表、越权归属校验等边界）
 - 请勿使用 `@Transactional` 做测试隔离：测试事务与内嵌容器的 HTTP 请求线程不共享连接，请求看不到未提交数据（表现为 200 + "未知错误"）
 
 > **H2 的局限**：H2 1.4.200 的 `CREATE TRIGGER` 只支持 `AS CALL <java方法>`，无法表达 MySQL 的 `begin...end` 触发器体，因此测试库不重建触发器。**触发器副作用（销量增减、`checked` 置 1）需在真实 MySQL 上验证**，见下方验收步骤。
 
 ## 验收步骤
 
-### 1. 契约对照（需要两个后端都能跑）
+### 1. 接口契约（自动化测试）
+
+全部接口契约由 82 个用例覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
 
 ```powershell
-# 前置：Flask 端在 5001 起（与 Java 版端口错开）
-#   cd backend && 修改 docker-compose 端口或本地起 Flask，使旧版监听 5001
-# Java 端在 5000 起
-docker compose -p csu_db -f backend-java/docker-compose.yml up -d --build
-
-powershell -ExecutionPolicy Bypass -File tools\compare_api.ps1 `
-    -FlaskBase http://127.0.0.1:5001 -JavaBase http://127.0.0.1:5000
-
-# 只比对只读接口（不动数据库）
-powershell -ExecutionPolicy Bypass -File tools\compare_api.ps1 -SkipWrites
+powershell -ExecutionPolicy Bypass -File backend-java\tools\build.ps1
 ```
-
-脚本逐接口比对 HTTP 状态码、语义 JSON、规范化后的响应体原文，结果写入 `tools/compare-results/compare-*.json`。
 
 ### 2. 触发器与真实数据库行为（需真实 MySQL）
 
@@ -413,7 +365,7 @@ powershell -ExecutionPolicy Bypass -File tools\compare_api.ps1 -SkipWrites
 | 用户在"未派发"页取消订单 | `m_sale_v` −1；`orderway.count` −1 |
 | 管理端派发订单 | `oorder.checked` 变为 1；订单从未派发列表消失、出现在派送中列表（视图） |
 | 修改订单收货信息 | 列表内容更新，`checked` 不变 |
-| 删除仍被 `server` 表引用的店铺 | **删除会成功**并留下 `server` 里指向不存在店铺的孤儿行——生产库 `server` 表**没有**指向 `fastfood_shop` 的外键（全库仅 `user_msg.id → user.id` 一条），详见「已知差异」第 12 条 |
+| 删除仍被 `server` 表引用的店铺 | **删除会成功**并留下 `server` 里指向不存在店铺的孤儿行——`server` 表**没有**指向 `fastfood_shop` 的外键（全库仅 `user_msg.id → user.id` 一条），详见「已知行为说明」第 12 条 |
 
 ### 3. 前端直连
 
@@ -425,30 +377,30 @@ npm run serve     # http://localhost:8080，Axios 写死指向 127.0.0.1:5000
 
 用 `18682412818 / Aa.460734909` 走管理端、`18873190398 / aA.460734909` 走用户端（登录填手机号，不填 CMX / YCX），逐页面确认功能正常。
 
-## 已知差异与说明（Java 版）
+## 已知行为说明
 
 | # | 项 | 说明 |
 | --- | --- | --- |
-| 1 | unicode 转义十六进制大小写 | Jackson 输出大写 `\u767B`，Python 输出小写 `\u767b`；语义等价，对比脚本做了归一化 |
-| 2 | 令牌缺失/非法 | Flask 返回 500 HTML，Java 版返回 401 + JSON（前端 axios 两个分支都不会崩） |
-| 3 | 未派发订单为空时 `tabledata` | 均输出 `[]`，一致 |
-| 4 | 数据库异常 | Flask 直接 500；Java 版收敛为 200 + `{"status":1000,"msg":"未知错误"}`，前端能正常提示 |
-| 5 | `usermsg` 查不到记录 | Flask 因 `data[0]` 越界返回 500；Java 版返回 **`{"status": 200}`**（`data` 为 null 时被 `@JsonInclude(NON_NULL)` 整个省略，**不是** `"data": null`）。正常有数据时两边响应完全一致。已由 `UserLoginApiTest#userMsgWithoutRecord` 锁定 |
-| 6 | 店铺 `action` 取值非法 | Flask 因无分支命中返回 500；Java 版返回业务失败响应 |
-| 7 | SQL 注入 | Flask 版全部使用字符串拼接（约 20 处）；Java 版改为 MyBatis 预编译参数，行为与响应不变，属安全性改进 |
-| 8 | JWT 载荷含明文密码 | 沿用原实现（`data.password`），未做改动以保证 token 兼容 |
+| 1 | unicode 转义十六进制大小写 | 统一输出大写 `\u767B`；JSON 规范允许大小写混用，语义等价 |
+| 2 | 令牌缺失/非法 | 返回 401 + JSON（前端 axios 两个分支都不会崩） |
+| 3 | 未派发订单为空时 `tabledata` | 输出 `[]` |
+| 4 | 数据库异常 | 收敛为 200 + `{"status":1000,"msg":"未知错误"}`，前端能正常提示 |
+| 5 | `usermsg` 查不到记录 | 返回 **`{"status": 200}`**（`data` 为 null 时被 `@JsonInclude(NON_NULL)` 整个省略，**不是** `"data": null`）。已由 `UserLoginApiTest#userMsgWithoutRecord` 锁定 |
+| 6 | 店铺 `action` 取值非法 | 返回业务失败响应而非 500 |
+| 7 | SQL 安全 | 全部 SQL 使用 MyBatis 预编译参数，无字符串拼接注入面 |
+| 8 | JWT 载荷含明文密码 | 既有契约如此（`data.password`），未做改动以保持 token 兼容 |
 | 9 | `wuliu.ended` 无接口可改 | 沿用原状，"已完成物流"页恒为空 |
-| 10 | 框架级错误的状态码 | 本轮修复：路径不存在 → **404**、HTTP 方法不允许 → **405**（带 `Allow` 头）、查询参数类型不匹配（如 `?days=abc`）→ **400**。修复前这三类都被兜底异常处理器收成 `200 + {"status":1000,"msg":"未知错误"}`，会让反向代理/监控/调用方无法区分"接口不存在"与"业务失败"。响应体为空（不再包一层 status/msg）：这三类不属于业务契约，`4xx` 即代表调用姿势不对，判定规则保持单一。请求体解析失败（字段名写错、多传未声明字段）**仍然**是 `200 + {"status":1000,...}`——那是"打到了接口但内容不合契约"，属业务响应 |
-| 11 | 改单/取消订单的归属校验 | 本轮修复：`POST/DELETE /api/user/unsend` 的 SQL 增加 `and cons_phone = #{consPhone}`（手机号取自 JWT），只能操作自己的订单。Flask 版只按 `order_id`，任意登录用户可改/删他人订单，而删除会触发 `order_delete_sale` 误减**别人店铺**的销量。一行都没影响时返回 `{"status":1000,"msg":"订单不存在或不属于当前用户"}`（两种情况合并同一句提示，避免用不同文案枚举出他人订单号）。由 `UserApiMutationTest#cannotTouchOthersOrder` 锁定 |
-| 12 | 删店铺会留下 `server` 孤儿行 | 生产库 `server` 表**没有**指向 `fastfood_shop` 的外键（实测 information_schema 只有 `user_msg.id → user.id` 一条），因此删除被服务员引用的店铺会成功，并留下指向不存在店铺的孤儿行。**沿用 Flask 行为未修**（修它等于改变既有接口语义）。测试夹具原先自造了该外键，会让测试锁住一个生产上不成立的行为，已与生产对齐 |
-| 13 | 单次 `data.sql` 之外 | 容器以 `init.sql` 初始化，示例账号为 `iu` / `mty`，需执行 `tools/seed_test_accounts.sql` 补齐 `CMX` / `YCX` |
+| 10 | 框架级错误的状态码 | 路径不存在 → **404**、HTTP 方法不允许 → **405**（带 `Allow` 头）、查询参数类型不匹配（如 `?days=abc`）→ **400**，响应体为空（这三类不属于业务契约，`4xx` 即代表调用姿势不对）；请求体解析失败（字段名写错、多传未声明字段）**仍然**是 `200 + {"status":1000,...}`——那是"打到了接口但内容不合契约"，属业务响应 |
+| 11 | 改单/取消订单的归属校验 | `POST/DELETE /api/user/unsend` 的 SQL 增加 `and cons_phone = #{consPhone}`（手机号取自 JWT），只能操作自己的订单；未命中返回 `{"status":1000,"msg":"订单不存在或不属于当前用户"}`（两种情况合并同一句提示，避免用不同文案枚举出他人订单号）。由 `UserApiMutationTest#cannotTouchOthersOrder` 锁定 |
+| 12 | 删店铺会留下 `server` 孤儿行 | `server` 表**没有**指向 `fastfood_shop` 的外键（实测 information_schema 只有 `user_msg.id → user.id` 一条），因此删除被服务员引用的店铺会成功，并留下指向不存在店铺的孤儿行（沿用既有接口语义，未修改；删除前请先解雇该店铺的服务员） |
+| 13 | 初始化账号 | 容器以 `database/init.sql` 初始化，示例账号为 `iu` / `mty`，需执行 `tools/seed_test_accounts.sql` 补齐 `CMX` / `YCX` |
 
 ## 与 sky-take-out 的对齐关系
 
 | sky-take-out 的做法 | Java 版的处理 |
 | --- | --- |
-| `Result<T>`（code/msg/data）+ 静态工厂 | 保留类与组织方式，另按 Flask 契约增加 `TableResult` / `DataResult` |
-| `BaseContext` ThreadLocal | 保留，泛型参数由 `Long id` 改为 `String telephone`（Flask 以手机号为检索键） |
+| `Result<T>`（code/msg/data）+ 静态工厂 | 保留类与组织方式，另按接口契约增加 `TableResult` / `DataResult` |
+| `BaseContext` ThreadLocal | 保留，泛型参数由 `Long id` 改为 `String telephone`（以手机号为检索键） |
 | `JwtProperties` + `JwtUtil` + `JwtTokenUserInterceptor` + `WebMvcConfiguration` | 全部保留；请求头由 `authentication` 改为 `token`，仅保留一个拦截器 |
 | `GlobalExceptionHandler` + `BaseException` + `MessageConstant` | 保留；文案换成本项目内容 |
 | 分层与包结构（controller/service/mapper/entity/dto/vo/config/...） | 完全对齐（单模块，不拆 common/pojo/server） |
@@ -574,9 +526,9 @@ Java 侧的三件事——**日期补零、小时补零、比率与日均计算*
 | 项 | 内容 |
 | --- | --- |
 | 拦截名单 | `WebMvcConfiguration.JWT_PATH_PATTERNS`（[L59-L67](backend-java/src/main/java/com/csu/takeout/config/WebMvcConfiguration.java#L59)） |
-| 原有 6 条 | `/api/user/addorder`、`/api/user/unsend`、`/api/user/sending`、`/api/user/sended`、`/api/user/usermsg`、`/api/user/pwd_chg`（与 Flask 版 `get_token_phone` 的调用点一一对应） |
+| 6 条用户端 | `/api/user/addorder`、`/api/user/unsend`、`/api/user/sending`、`/api/user/sended`、`/api/user/usermsg`、`/api/user/pwd_chg`（需要登录态） |
 | 新增 1 条 | `/api/manager/stats/**`（L66）——覆盖全部 8 个统计接口，包括下钻 |
-| 既有管理端接口 | 15 个映射：`shop` / `server` / `dispatcher` 各 3 个、`unsend` 2 个、`sending` / `sended` / `wuliu` 各 1 个，全部**不在名单内**，鉴权行为与 Flask 版逐字节一致，本次未做任何改动 |
+| 既有管理端接口 | 15 个映射：`shop` / `server` / `dispatcher` 各 3 个、`unsend` 2 个、`sending` / `sended` / `wuliu` 各 1 个，全部**不在名单内**，鉴权行为保持既有约定，未做任何改动 |
 | 校验失败响应 | 拦截器直接写 401 + `{"code": 1000, "msg": "用户未登录"}`（在拦截器内显式写出而不抛异常，原因见上文「JWT 实现细节」） |
 | 对现有前端的影响 | **零**：`api/index.js` 的请求拦截器（L12-L20）本来就在每个请求头带 `token`，此前只是既有接口不校验而已；统计接口开始校验后，前端一行都不用改，只是"带的 token 终于被用上了" |
 | 测试锁定 | `ManagerStatsApiTest#statsRequireToken`（401）与 `#existingManagerApiStillOpen`（不带 token 调 `/api/manager/shop` 仍 200） |
