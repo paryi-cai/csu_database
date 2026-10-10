@@ -1,14 +1,14 @@
-# backend-java — Spring Boot 3 主后端
+# backend-java — Spring Boot 3 后端（主后端）
 
-由 Flask 版（`../backend/`）重构而来：**路径、请求参数、响应 JSON 逐字节兼容**，
-原 Vue 前端一行不改即可切换，接口对照表见根 `README.md`。
+校园快餐订餐管理系统后端：Spring Boot 3.4.4 + MyBatis + Druid + Redis + JWT，
+提供用户端与管理员两组 REST 接口，配套 **82 个接口契约测试**（H2，无需 Docker）。
 
 ## 内容
 
 - `src/main/java/com/csu/takeout/`
   - `controller/` — user/ 与 manager/ 两组接口
   - `service/ (+impl)` / `mapper/` — 业务层与 MyBatis 持久层
-  - `json/` — Flask 兼容 JSON 序列化器（空格排版、末尾换行、非 ASCII 转义）
+  - `json/` — 统一 JSON 序列化器（空格排版、末尾换行、非 ASCII 转义，保证响应格式稳定）
   - `interceptor/ context/` — JWT 拦截器（请求头 `token`）+ ThreadLocal 当前用户
   - `entity/ dto/ vo/ result/ handler/ config/ constant/ utils`
 - `src/main/resources/` — `application.yml`（默认 `localhost:3307`）+ `mapper/*.xml`（SQL 全部在这里）

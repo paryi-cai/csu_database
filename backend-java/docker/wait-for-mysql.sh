@@ -1,7 +1,7 @@
 #!/bin/bash
-# 等待 MySQL 就绪后再启动 Java 后端。
+# 等待 MySQL 就绪后再启动后端应用。
 #
-# 与 Flask 版 backend/wait-for-mysql.sh 的职责一致（等 MySQL 可连接后再拉起应用）。
+# 职责：等 MySQL 端口可连接后再拉起应用，避免容器编排下的启动竞态。
 #
 # ── 为什么必须是 "#!/bin/bash" 而不是 "#!/bin/sh" ──
 #   eclipse-temurin 的 jammy 镜像里 /bin/sh 指向 dash，而 /dev/tcp 是 bash 专属特性。

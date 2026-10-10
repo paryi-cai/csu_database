@@ -1,13 +1,13 @@
-# 校园快餐订餐管理系统 —— Java 后端编排
+# 校园快餐订餐管理系统 —— 后端编排（MySQL + Redis + Spring Boot）
 #
-# 与 Flask 版的 backend/docker-compose.yml 保持：
-#   - 对外端口不变：MySQL 3307、Redis 6379、API 5000
-#   - 数据卷不变：heu_db_mysql_data（external，需先 docker volume create）
-#   - 数据库初始化脚本不变：仍挂载 backend/db/init.sql
+# 约定：
+#   - 对外端口：MySQL 3307、Redis 6379、API 5000
+#   - 数据卷：heu_db_mysql_data（external，需先 docker volume create）
+#   - 数据库初始化脚本：挂载 ../database/init.sql
 #
 # 启动：docker compose -p csu_db up -d --build
 #
-# 注意：backend/db/init.sql 中的示例账号是 iu / mty，
+# 注意：database/init.sql 中的示例账号是 iu / mty，
 #       而 README 与验收脚本使用的测试账号是 CMX / YCX。
 #       因此根目录的 start_project.bat 会在启动后用幂等 SQL 补齐这两个账号
 #       （不修改 init.sql 本身）；手动启动时可参考 start_project.bat 中的同名步骤。
@@ -22,7 +22,7 @@ services:
     ports:
       - "3307:3306"
     volumes:
-      - ../backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ../database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - heu_db_mysql_data:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:

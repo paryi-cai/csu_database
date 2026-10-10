@@ -1,6 +1,6 @@
 -- 幂等补齐 README / 验收脚本使用的测试账号。
 --
--- 背景：backend/db/init.sql（容器初始化脚本）里的示例账号是 iu / mty，
+-- 背景：database/init.sql（容器初始化脚本）里的示例账号是 iu / mty，
 --       与 README 与验收脚本使用的 CMX / YCX 不一致。
 --       为遵守"不修改 init.sql"的约束，改为在容器启动后执行本脚本补齐账号。
 --

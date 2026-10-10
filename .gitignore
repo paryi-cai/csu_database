@@ -8,7 +8,7 @@ tools/compare-results/
 **/.build.log.err
 **/*.log
 
-# IDE（backend/ 下的 .idea 没有自己的 .gitignore，这里兜底；backend-java 已有各自的忽略）
+# IDE（各子项目目录下另有各自的 .gitignore，这里全局兜底）
 .idea/
 **/*.iml
 

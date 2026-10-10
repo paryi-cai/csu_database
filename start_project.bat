@@ -74,7 +74,7 @@ goto wait_mysql
 echo       MySQL is healthy.
 
 :: 5. 幂等补齐测试账号 CMX / YCX
-::    说明：backend/db/init.sql 中的示例账号是 iu / mty，与 README 使用的测试账号不一致；
+::    说明：database/init.sql 中的示例账号是 iu / mty，与 README 使用的测试账号不一致；
 ::    为不修改 init.sql，这里在启动后执行一次幂等 SQL 补齐账号。
 echo.
 echo [5/6] Seeding test accounts (CMX / YCX, idempotent)...

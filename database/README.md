@@ -6,5 +6,7 @@
   - **6 个触发器**：`order_insert/update/delete`（维护 orderway.count）、`order_insert_sale/order_delete_sale`（维护店铺销量）、`wuliu_insert`（派发后置 checked=1）
   - 含演示数据与测试账号
 
-> 容器首次启动实际执行的是 `backend/db/init.sql`（结构与数据同源）；
-> 本文件用于手工导入 MySQL / Navicat 或查阅完整对象定义。
+- `init.sql` — 容器**首次启动自动执行**的初始化脚本（结构、视图、触发器与 `caimingxuan.sql` 同源；
+  由 `backend-java/docker-compose.yml` 挂载进 MySQL 容器）
+
+> `caimingxuan.sql` 用于手工导入 MySQL / Navicat 或查阅完整对象定义；两者结构一致，日常改库后以 `caimingxuan.sql` 为准重新导出。

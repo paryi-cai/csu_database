@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!--
-        CSU 数据库课程设计 —— 校园快餐订餐管理系统（Java 版后端）
-        由 Flask 后端（backend/）重构而来，接口响应与 Flask 版逐字节兼容。
-        Spring Boot 3.4.4 + JDK 17，全面使用 jakarta.*
+        CSU 数据库课程设计 —— 校园快餐订餐管理系统（后端）
+        Spring Boot 3.4.4 + JDK 17，全面使用 jakarta.*；
+        接口响应与前端契约逐字节一致（见 src/test 的 82 个契约测试）。
     -->
     <parent>
         <groupId>org.springframework.boot</groupId>

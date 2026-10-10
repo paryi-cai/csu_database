@@ -4,7 +4,7 @@
 
 | 文件 | 容器 |
 | --- | --- |
-| `csu_db.txt` | MySQL 8.0.44（3307）/ Redis 7.4.7（6379）/ Flask 后端（5000） |
+| `csu_db.txt` | MySQL 8.0.44（3307）/ Redis 7.4.7（6379） |
 | `mariadb-datax.txt` | MariaDB 12.1.2（3308）— DataX 迁移目标 |
 | `postgres_navicat.txt` | PostgreSQL 18.1（5432）— DataX 迁移目标 |
 
