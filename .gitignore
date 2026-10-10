@@ -1,3 +1,5 @@
+# 仓库根忽略规则（backend-java / frontend/sjk 目录下另有各自的 .gitignore）
+
 # 对照脚本的输出目录（每次运行生成 compare-*.json）
 tools/compare-results/
 
