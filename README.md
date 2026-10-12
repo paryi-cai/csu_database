@@ -2,12 +2,12 @@
 
 一个基于 **MySQL + Spring Boot 3 + Vue 2** 的校园快餐订餐管理系统，实现用户订餐、订单流转、配送管理等功能，并演示了视图、触发器、外键等数据库特性，以及使用 DataX 将 MySQL 数据迁移至 MariaDB / PostgreSQL 的跨数据库实践。
 
-> 后端为 Spring Boot 3.4（`backend-java/`，配 102 个接口契约测试），前端为 Vue 2 单页应用（用户端 + 管理端数据看板）。
+> 后端为 Spring Boot 3.4（`backend-java/`，配 108 个接口契约测试），前端为 Vue 2 单页应用（用户端 + 管理端数据看板）。
 
 ## 功能特性
 
 **用户端**
-- 登录 / 注册（JWT 签发 token，Redis 存储短信验证码，短信发送代码暂时注释）
+- 登录（JWT 签发 token；注册与找回密码依赖的短信验证码接口未实现，前端未提供入口）
 - 浏览快餐店铺列表、下单订餐
 - 订单管理：未派送（可修改收货信息 / 删除订单）、派送中、已送达
 - 个人信息查看与编辑（用户名 / 真实姓名 / 性别 / 年龄 / 邮箱；联系电话为查询键，只读）、页内修改密码
@@ -44,7 +44,7 @@ csu_database-master/
 │   │   ├── task/                     # 定时任务：数据一致性巡检（ConsistencyCheckTask）
 │   │   └── entity / dto / vo / result / handler / config / constant / properties / utils
 │   ├── src/main/resources/           # application.yml（默认 localhost:3307）+ mapper XML
-│   ├── src/test/                     # 102 个接口契约测试（H2 MySQL 兼容模式，无需 Docker）
+│   ├── src/test/                     # 108 个接口契约测试（H2 MySQL 兼容模式，无需 Docker）
 │   ├── tools/build.ps1               # 一键构建（用可写 Maven 仓库副本，受限环境可跑）
 │   ├── tools/verify-wait-probe.sh    # 验证「端口就绪探测」行为的辅助脚本
 │   ├── Dockerfile                    # 多阶段构建（maven → JRE 17）
@@ -275,7 +275,7 @@ curl.exe -s -X POST http://127.0.0.1:5000/api/manager/alert/patrol -H "token: <�
 | PageHelper | pagehelper-spring-boot-starter 2.1.0 | 本项目列表接口均为全量返回，保留依赖以对齐技术栈 |
 | Druid | druid-spring-boot-3-starter 1.2.23 | Boot 3 专用 starter |
 | MySQL 驱动 | `com.mysql:mysql-connector-j` | Boot 3 起 groupId 变更，版本由 Boot 管理 |
-| Redis | spring-boot-starter-data-redis | 当前无接口依赖（见下文「Redis 的实际角色」） |
+| Redis | spring-boot-starter-data-redis | 管理端看板统计缓存（见下文「Redis 的实际角色」「缓存设计」） |
 | 接口文档 | knife4j-openapi3-jakarta-spring-boot-starter 4.4.0 | 替代 sky-take-out 的 springfox（Boot 3 下不可用） |
 | JWT | jjwt-api / impl / jackson 0.12.6 | 替代 sky-take-out 的 jjwt 0.9.1 |
 
@@ -380,8 +380,13 @@ Jackson 默认输出与前端依赖的响应格式差异较大（紧凑无空格
 
 ### Redis 的实际角色
 
-Redis 目前仅预留给"发送短信验证码"场景：`/api/user/register/send_sms`、`/api/user/register/test`、`/api/user/findback` 三个接口未实现，前端点"获取验证码"会收到 404（前端也未提供入口）。
-后端**不实现这三个接口**（不臆造行为），只保留 Redis 依赖与配置（`RedisConstant` 登记 `valid_code:{手机号}` 命名与 600 秒 TTL）与 Redis 服务编排。
+Redis 承担**管理端数据看板的统计缓存**（真实业务使用）：
+
+- `ManagerStatsService` 的 8 个只读方法全部 `@Cacheable` 到缓存名 `stats`，key 按「接口 + 参数」拼接（如 `trend:7`、`shops:10:money`），Redis 里实际键形如 `csu:cache:stats::trend:7`；
+- 写路径（下单 / 删单 / 派发 / 店铺与配送员维护）用 `@CacheEvict(allEntries = true)` 主动失效，60 秒 TTL 兜底；
+- 缓存故障时 `LoggingCacheErrorHandler` 降级为直查数据库，看板接口不因 Redis 故障不可用。
+
+另外仍保留"发送短信验证码"的 key 命名（`RedisConstant` 登记 `valid_code:{手机号}` 与 600 秒 TTL）：对应的注册 / 找回接口未实现（不臆造行为），前端也未提供入口。
 
 ## 接口一览
 
@@ -412,7 +417,7 @@ powershell -ExecutionPolicy Bypass -File backend-java\tools\build.ps1 -SkipTests
 
 ### 1. 接口契约（自动化测试）
 
-全部接口契约由 102 个用例覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
+全部接口契约由 108 个用例覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File backend-java\tools\build.ps1
@@ -595,6 +600,21 @@ Java 侧的三件事——**日期补零、小时补零、比率与日均计算*
 | 校验失败响应 | 拦截器直接写 401 + `{"code": 1000, "msg": "用户未登录"}`（在拦截器内显式写出而不抛异常，原因见上文「JWT 实现细节」） |
 | 对现有前端的影响 | **零**：`api/index.js` 的请求拦截器本就在每个请求头带 `token`，此前只是既有接口不校验而已；新接口开始校验后，前端一行都不用改，只是"带的 token 终于被用上了" |
 | 测试锁定 | `ManagerStatsApiTest#statsRequireToken`、`ManagerAlertApiTest#requiresToken`（401）与 `#existingManagerApiStillOpen`（不带 token 调 `/api/manager/shop` 仍 200） |
+
+## 缓存设计（Redis）
+
+看板 8 个聚合接口是全项目唯一的高频重查询（每次刷新并发扫 `oorder`），因此给 `ManagerStatsService` 的全部 8 个只读方法做了 Spring Cache + Redis 缓存：
+
+| 决策 | 落地 | 理由 |
+| --- | --- | --- |
+| 缓存粒度 | 每接口一个 key（`overview` / `trend:7` / `shops:10:money` …），Redis 键为 `csu:cache:stats::<key>` | key 按「接口 + 参数」拼接且可读，redis-cli 里能直接检查 |
+| TTL 60 秒 | `RedisCacheConfiguration.entryTtl(60s)` | 看板可容忍 1 分钟内的陈旧数据；短 TTL 同时兜底失效遗漏 |
+| 写路径主动失效 | 下单 / 删单 / 派发 / 店铺与配送员维护 → `@CacheEvict(allEntries = true)` | 销量、订单状态等派生值由触发器维护，难以精确定位受影响 key；缓存总量极小，全量清空最稳 |
+| 值 JSON 序列化 | `GenericJackson2JsonRedisSerializer`（带类型信息） | 不用 JDK 序列化：可读、跨版本稳定、无反序列化安全顾虑；回读仍是原 VO 类型 |
+| 故障降级 | `LoggingCacheErrorHandler`（get 失败按未命中、写/失效失败只记日志） | Redis 宕机时看板接口照常可用（回落直查数据库），只损失缓存增益——与告警链路同一原则 |
+| 测试隔离 | `application-h2test.yml` 设 `spring.cache.type=simple` | 契约测试不依赖 Redis，且 `@Cacheable` / `@CacheEvict` 仍被真实执行 |
+
+**边界说明（面试深挖点）**：查不到的店铺返回 null 也会被缓存 60 秒，可防"缓存穿透"重复回源；TTL 固定且 key 少，若担心同时过期（雪崩）可加随机抖动；单 key 过期瞬间的并发回源（击穿）未加互斥锁——统计查询本身不重、回源成本低，量级上去后再加锁。缓存淘汰策略未显式配置（Redis 默认），如需 LRU / LFU 可在 Redis 侧设置 `maxmemory-policy`。
 
 ## 演示数据
 

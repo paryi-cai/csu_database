@@ -460,12 +460,13 @@ SELECT shop_name, m_sale_v FROM fastfood_shop WHERE shop_name = '大美鸡公煲
 
 ## 第 8 章 接口契约测试
 
-全部接口契约由 `backend-java/src/test` 下的 **102 个用例**覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
+全部接口契约由 `backend-java/src/test` 下的 **108 个用例**覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
 
 - 响应体**原文**断言（空格排版、末尾换行、非 ASCII 转义、空数组）
 - JWT 载荷结构与短密钥签名（手工复算 HMAC 验证补零不改变结果）
 - 全部接口的端到端契约（401 / 框架级 404·405·400 / 空列表 / 越权归属校验等边界）
 - 异常告警与一致性巡检（降级 / 节流窗口 / 失败吞掉 / 线程池关闭后安全丢弃；一致 / 不一致 / 表缺失 / 库不可达 / 告警与恢复；定时任务配置门禁防"假绿"）
+- 看板统计缓存（命中同一对象 / key 按参数隔离 / 写路径全量失效 / TTL 与 JSON 序列化往返 / 缓存故障降级）
 
 ```powershell
 cd "D:\Desktop\面试\数据库项目\csu_database-master"
@@ -635,6 +636,8 @@ docker compose -p csu_db -f backend-java/docker-compose.yml up -d --build backen
 | 后端启动报 `Communications link failure` / 连不上数据库 | MySQL 容器没起，或端口不对 | 确认 `docker ps` 里 mysql 是 `healthy`；IDEA 里默认走 `localhost:3307` |
 | 删除店铺后 `server` 表里留下指向它的记录 | `server` 表**没有**指向 `fastfood_shop` 的外键，删除不会被引用阻止 | **既有遗留行为**，未做修改——修它等于改变接口语义。删除前请先解雇该店铺的服务员，避免留下孤儿行 |
 | `物流管理 → 已完成` 页一直为空 | 无任何接口/触发器能修改 `wuliu.ended` | **既有现象**，按契约保留 |
+| 看板数字 60 秒内不更新 | 统计缓存 TTL 60 秒（正常缓存行为） | 等待 TTL，或做一次写操作（下单 / 派发 / 店铺维护）会立即失效刷新 |
+| Redis 没启动，看板仍能打开 | 缓存故障降级：读失败按未命中处理、回落数据库（日志出现"缓存读取失败，降级为直查数据库"） | **正常设计**（旁路不影响业务）；起 Redis 后自动恢复缓存增益 |
 
 ### 11.4 Navicat 类
 
