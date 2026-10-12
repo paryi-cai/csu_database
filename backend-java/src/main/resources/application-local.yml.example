@@ -14,8 +14,19 @@ spring:
     redis:
       host: localhost
       port: 6379
+  mail:
+    # ==================== 异常告警 SMTP（可选）====================
+    # 用 QQ 邮箱示例：smtp.qq.com:465 + SMTP 授权码（不是登录密码），
+    # 并在下方 csu.alert 中把 enabled 改为 true、to 填收件人。
+    host: smtp.qq.com
+    port: 465
+    username: 你的邮箱@qq.com
+    password: "SMTP 授权码"
 
 csu:
   jwt:
     # JWT 签名密钥（生产环境务必改为强密钥；容器编排的默认值见 docker-compose.yml 的 JWT_SECRET）
     secret-key: 你的JWT密钥
+  alert:
+    enabled: true
+    to: 接收告警的邮箱@example.com

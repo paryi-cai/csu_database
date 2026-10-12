@@ -57,6 +57,21 @@ services:
       SERVER_PORT: "5000"
       TZ: Asia/Shanghai
       JWT_SECRET: "12asdffa2323"
+      # ==================== 异常告警（可选）====================
+      # 在宿主机提前 export 下列变量后启动，容器内即可用（未设置时不启用、只写日志）：
+      #   MAIL_HOST / MAIL_PORT / MAIL_USERNAME / MAIL_PASSWORD
+      #   ALERT_ENABLED=true / ALERT_TO / ALERT_FROM
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-465}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      ALERT_ENABLED: ${ALERT_ENABLED:-false}
+      ALERT_FROM: ${ALERT_FROM:-}
+      ALERT_TO: ${ALERT_TO:-}
+      # 一致性巡检（可选）：容器内访问宿主机上的 MariaDB / PostgreSQL 目标库
+      CONSISTENCY_ENABLED: ${CONSISTENCY_ENABLED:-false}
+      MARIADB_HOST: ${MARIADB_HOST:-host.docker.internal}
+      POSTGRES_HOST: ${POSTGRES_HOST:-host.docker.internal}
     ports:
       - "5000:5000"
     depends_on:
