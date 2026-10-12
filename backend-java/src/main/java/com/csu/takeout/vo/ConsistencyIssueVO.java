@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- * 数据一致性巡检结果条目（/api/manager/alert/patrol 的 tabledata）。
+ * 数据一致性巡检结果条目（/api/manager/alert/patrol 响应体 data 字段中的 issues 元素）。
  *
  * <p>三种异常：行数不一致（{@code COUNT_MISMATCH}）、目标表缺失或查询失败
  * （{@code QUERY_FAILED}）、库不可达（{@code UNREACHABLE}）。库不可达时

@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * 数据一致性定时巡检任务。
  *
@@ -23,10 +25,20 @@ public class ConsistencyCheckTask {
 
     private final ConsistencyCheckService consistencyCheckService;
 
+    /** 配置不完整只提示一次，避免每轮巡检重复刷日志 */
+    private final AtomicBoolean configWarned = new AtomicBoolean();
+
     @Scheduled(fixedDelayString = "${csu.consistency.interval-ms:300000}",
             initialDelayString = "${csu.consistency.initial-delay-ms:60000}")
     public void scheduledPatrol() {
         if (!properties.isEnabled()) {
+            return;
+        }
+        if (!properties.isConfigured()) {
+            // 只开开关没配源库/目标库时，比对循环会空转并误报"全部一致"，这里直接跳过
+            if (configWarned.compareAndSet(false, true)) {
+                log.warn("定时巡检已启用，但源库或目标库未配置完整，跳过本轮（配置齐备后自动恢复执行）");
+            }
             return;
         }
         try {

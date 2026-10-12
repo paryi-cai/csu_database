@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.LongSupplier;
 
 /**
@@ -92,8 +93,15 @@ public class AlertServiceImpl implements AlertService {
             log.info("告警处于 {} 分钟抑制窗口内，跳过：{}", properties.getThrottleMinutes(), subject);
             return false;
         }
-        executor.execute(() -> doSend(subject, content));
-        return true;
+        try {
+            executor.execute(() -> doSend(subject, content));
+            return true;
+        } catch (RejectedExecutionException ex) {
+            // 应用关闭期间线程池已停止：丢弃本次告警，绝不能把异常抛给调用方
+            // （调用方之一是 GlobalExceptionHandler 的兜底分支，那里抛异常会掩盖原始异常）
+            log.warn("告警线程池已关闭，本次告警丢弃：{}", subject);
+            return false;
+        }
     }
 
     @Override

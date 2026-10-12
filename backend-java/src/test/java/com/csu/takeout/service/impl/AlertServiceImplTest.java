@@ -167,4 +167,17 @@ class AlertServiceImplTest {
         AlertServiceImpl service = new AlertServiceImpl(enabledProps(), providerOf(null), Runnable::run, System::currentTimeMillis);
         assertDoesNotThrow(() -> assertFalse(service.alertNow("主题", "正文")));
     }
+
+    @Test
+    @DisplayName("线程池已关闭后调用 alert()：不抛异常并返回 false（避免异常处理器二次抛错）")
+    void alertAfterShutdownIsRejectedGracefully() {
+        RecordingMailSender sender = new RecordingMailSender();
+        // 用公开构造器，走自建线程池（ownedExecutor）路径
+        AlertServiceImpl service = new AlertServiceImpl(enabledProps(), providerOf(sender));
+        service.shutdown();
+
+        assertDoesNotThrow(() -> assertFalse(service.alert("job-a", "主题", "正文")),
+                "线程池关闭后告警必须安全降级，绝不能向上抛 RejectedExecutionException");
+        assertTrue(sender.sent.isEmpty());
+    }
 }
