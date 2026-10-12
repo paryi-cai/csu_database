@@ -19,6 +19,7 @@
 - [第 7 章 触发器与视图演示脚本（面试重点）](#第-7-章-触发器与视图演示脚本面试重点)
 - [第 8 章 接口契约测试](#第-8-章-接口契约测试)
 - [第 9 章 可选：DataX 跨数据库迁移复现](#第-9-章-可选datax-跨数据库迁移复现)
+- [第 9.6 节 迁移后一致性校验与告警](#96-迁移后一致性校验与告警可选)
 - [第 10 章 停止 / 重启 / 彻底重置](#第-10-章-停止--重启--彻底重置)
 - [第 11 章 排查表（实测踩过的所有坑）](#第-11-章-排查表实测踩过的所有坑)
 - [附录 A 端口与账号速查](#附录-a-端口与账号速查)
@@ -459,11 +460,12 @@ SELECT shop_name, m_sale_v FROM fastfood_shop WHERE shop_name = '大美鸡公煲
 
 ## 第 8 章 接口契约测试
 
-全部接口契约由 `backend-java/src/test` 下的 **82 个用例**覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
+全部接口契约由 `backend-java/src/test` 下的 **98 个用例**覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
 
 - 响应体**原文**断言（空格排版、末尾换行、非 ASCII 转义、空数组）
 - JWT 载荷结构与短密钥签名（手工复算 HMAC 验证补零不改变结果）
 - 全部接口的端到端契约（401 / 框架级 404·405·400 / 空列表 / 越权归属校验等边界）
+- 异常告警与一致性巡检（降级 / 节流窗口 / 失败吞掉；一致 / 不一致 / 表缺失 / 库不可达 / 告警与恢复）
 
 ```powershell
 cd "D:\Desktop\面试\数据库项目\csu_database-master"
@@ -519,6 +521,47 @@ datax.py ..\mysql2mariadb_datax_json\m2m_user.json
 
 - `other_database/MariaDB.sql`
 - `other_database/PostgreSQL.sql`（用 plpgsql 函数 + 触发器**复刻**了 MySQL 的触发器逻辑）
+
+### 9.6 迁移后一致性校验与告警（可选）
+
+后端内置两条检测链路，默认关闭：
+
+| 机制 | 检测对象 | 触发方式 |
+| --- | --- | --- |
+| 运行期异常告警 | 未预期的系统异常（全局异常处理器兜底分支） | 请求触发（异常类级别 10 分钟节流） |
+| 数据一致性巡检 | 源库 MySQL 与目标库 MariaDB / PostgreSQL 各表行数 | 定时任务 + 手动接口 |
+
+启用（环境变量示例，对 `docker compose` 与本地 IDEA 均生效）：
+
+```powershell
+$env:MAIL_HOST="smtp.qq.com"; $env:MAIL_PORT="465"
+$env:MAIL_USERNAME="你的邮箱@qq.com"; $env:MAIL_PASSWORD="SMTP授权码"
+$env:ALERT_ENABLED="true"; $env:ALERT_TO="接收告警的邮箱@example.com"
+$env:CONSISTENCY_ENABLED="true"     # 还要开定时巡检时才需要
+```
+
+先做一次迁移（9.3），让 `testdb` 里有数据，然后验证：
+
+```powershell
+# 1. 登录拿 token（管理端账号，见附录 A）
+curl.exe -s -X POST http://127.0.0.1:5000/api/user/login -H "Content-Type: application/json" -d "{\"telephone\":\"18682412818\",\"password\":\"Aa.460734909\"}"
+# 2. 测试邮件链路：收到测试邮件 = SMTP 配置成功
+curl.exe -s -X POST http://127.0.0.1:5000/api/manager/alert/test -H "token: <上一步的 token>"
+# 3. 手动巡检：对比源库与 MariaDB / PostgreSQL 行数
+curl.exe -s -X POST http://127.0.0.1:5000/api/manager/alert/patrol -H "token: <上一步的 token>"
+```
+
+巡检返回 `consistent: true` 表示数据一致；不一致 / 表缺失 / 目标库不可达会逐表列出，并（若启用）发告警邮件；
+由异常恢复一致时会发"已恢复"邮件。**不配 SMTP 也能用**：巡检照常执行，只是 `alert_sent: false`，只写日志。
+
+常见现象对应：
+
+| 现象 | 原因 | 处理 |
+| --- | --- | --- |
+| `alert_sent: false` 且日志出现"未启用 / 无收件人" | 告警未开启 | 设置 `ALERT_ENABLED=true` 与 `ALERT_TO` |
+| `/alert/test` 返回 1000 | SMTP 未配置或发送失败 | 检查 `MAIL_*` 与授权码；QQ 邮箱用授权码而非登录密码 |
+| 巡检报"库不可达" | 目标库没启动（MariaDB 3308 / PostgreSQL 5432 默认不开） | 按 9.1 启动对应容器，或把巡检当作"目标库存活探测"使用 |
+| 一致但行数都为 0 | 目标库是空的，没迁移过 | 先按 9.3 执行迁移 |
 
 ---
 

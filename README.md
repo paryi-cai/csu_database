@@ -2,7 +2,7 @@
 
 一个基于 **MySQL + Spring Boot 3 + Vue 2** 的校园快餐订餐管理系统，实现用户订餐、订单流转、配送管理等功能，并演示了视图、触发器、外键等数据库特性，以及使用 DataX 将 MySQL 数据迁移至 MariaDB / PostgreSQL 的跨数据库实践。
 
-> 后端为 Spring Boot 3.4（`backend-java/`，配 82 个接口契约测试），前端为 Vue 2 单页应用（用户端 + 管理端数据看板）。
+> 后端为 Spring Boot 3.4（`backend-java/`，配 98 个接口契约测试），前端为 Vue 2 单页应用（用户端 + 管理端数据看板）。
 
 ## 功能特性
 
@@ -18,13 +18,15 @@
 - 配送员管理：配送员的增删
 - 订单管理：未派发订单的查询与派发、派送中订单、已送达订单
 - 物流管理：未结束 / 已结束配送记录查询
+- 数据看板：8 个统计面板（KPI / 趋势 / 分布 / 榜单，可下钻）
+- 异常检测与告警：未预期系统异常自动告警邮件（带节流）；数据一致性巡检（定时或手动）检测源库与 MariaDB / PostgreSQL 的行数差异，异常告警、恢复通知（SMTP 可选启用，默认只写日志）
 
 ## 技术栈
 
 | 层次 | 技术 |
 | --- | --- |
 | 前端 | Vue 2.6、Vue Router、Element UI、ECharts 5、Axios |
-| 后端 | JDK 17、Spring Boot 3.4.4、MyBatis、Druid、PageHelper、Redis、Knife4j、JJWT |
+| 后端 | JDK 17、Spring Boot 3.4.4、MyBatis、Druid、PageHelper、Redis、Knife4j、JJWT、Spring Mail |
 | 数据库 | MySQL 8.0（Docker 部署），含视图、触发器、外键 |
 | 部署 | Docker Compose（MySQL + Redis + Backend） |
 | 数据迁移 | DataX（MySQL → MariaDB / PostgreSQL） |
@@ -35,13 +37,14 @@
 csu_database-master/
 ├── backend-java/                     # 后端（Spring Boot 3.4.4 + MyBatis + Redis + JWT）
 │   ├── src/main/java/com/csu/takeout/
-│   │   ├── controller/user、manager/ # 接口层：登录 / 订单 / 个人信息；店铺 / 服务员 / 配送员 / 物流 / 数据统计
+│   │   ├── controller/user、manager/ # 接口层：登录 / 订单 / 个人信息；店铺 / 服务员 / 配送员 / 物流 / 数据统计 / 异常告警
 │   │   ├── service(+impl) / mapper/  # 业务层与 MyBatis 持久层（SQL 全部在 resources/mapper/*.xml）
 │   │   ├── json/                     # 统一 JSON 序列化器（空格排版、末尾换行、非 ASCII 转义）
 │   │   ├── interceptor/ context/     # JWT 拦截器（请求头 token）+ ThreadLocal 当前用户
-│   │   └── entity / dto / vo / result / handler / config / constant / utils
+│   │   ├── task/                     # 定时任务：数据一致性巡检（ConsistencyCheckTask）
+│   │   └── entity / dto / vo / result / handler / config / constant / properties / utils
 │   ├── src/main/resources/           # application.yml（默认 localhost:3307）+ mapper XML
-│   ├── src/test/                     # 82 个接口契约测试（H2 MySQL 兼容模式，无需 Docker）
+│   ├── src/test/                     # 98 个接口契约测试（H2 MySQL 兼容模式，无需 Docker）
 │   ├── tools/build.ps1               # 一键构建（用可写 Maven 仓库副本，受限环境可跑）
 │   ├── tools/verify-wait-probe.sh    # 验证「端口就绪探测」行为的辅助脚本
 │   ├── Dockerfile                    # 多阶段构建（maven → JRE 17）
@@ -170,6 +173,8 @@ npm run serve
 | GET/POST | `/api/manager/unsend` | 未派发订单查询与派发 |
 | GET | `/api/manager/wuliu` | 物流记录（按 ended 筛选） |
 | GET | `/api/manager/sending` `/api/manager/sended` | 派送中 / 已送达订单 |
+| POST | `/api/manager/alert/test` | 发送测试告警邮件（验证 SMTP 配置链路） |
+| POST | `/api/manager/alert/patrol` | 立即执行数据一致性巡检（对比源库与各目标库行数，异常触发告警） |
 
 除登录外，需要认证的接口通过请求头 `token` 传递 JWT，由后端拦截器（`JwtTokenInterceptor`）解析获取用户手机号。
 
@@ -183,6 +188,64 @@ npm run serve
 每张表一个 JSON 任务（user、user_msg、fastfood_shop、oorder、orderway、server、dispatcher、wuliu），数据库账号密码已加密存储。迁移结果见 `other_database/MariaDB.sql` 与 `other_database/PostgreSQL.sql`（PostgreSQL 版本使用 plpgsql 函数 + 触发器复刻了 MySQL 的触发器逻辑）。
 
 > **这两个数据库只在做跨库迁移演示时才需要启动**，与前后端运行无关。系统运行时只依赖 MySQL 8.0 与 Redis。
+
+## 异常检测与告警（SMTP，可选启用）
+
+提供两条真实可用的异常检测链路，均默认关闭、配置后生效；**告警链路自身出错只写日志，绝不影响业务**：
+
+| 机制 | 检测对象 | 触发方式 | 行为 |
+| --- | --- | --- | --- |
+| 运行期异常告警 | 未预期的系统异常（全局异常处理器兜底分支） | 请求触发 | 按异常类**节流**（默认 10 分钟/类）后**异步**发送含堆栈前 15 行的告警邮件；业务异常（参数错误 / 重复键 / 约束冲突）不告警，避免噪音 |
+| 数据一致性巡检 | 源库（MySQL）与 DataX 迁移目标库（MariaDB / PostgreSQL）各表行数 | 定时任务（默认关）+ `POST /api/manager/alert/patrol` 手动触发 | 行数不一致 / 目标表缺失 / 目标库不可达 → 触发告警；由异常恢复一致时 → 发送**恢复通知**，形成"告警 → 修复 → 确认"闭环 |
+
+**启用方式**（两种任选其一）：
+
+```powershell
+# 方式 A：环境变量（推荐，对 docker compose 同样生效）
+$env:MAIL_HOST="smtp.qq.com"; $env:MAIL_PORT="465"
+$env:MAIL_USERNAME="你的邮箱@qq.com"; $env:MAIL_PASSWORD="SMTP 授权码"
+$env:ALERT_ENABLED="true"; $env:ALERT_TO="接收告警的邮箱@example.com"
+# 若还要开启定时巡检（目标库需已迁移过数据）
+$env:CONSISTENCY_ENABLED="true"
+
+# 方式 B：复制 application-local.yml.example 为 application-local.yml（已忽略提交）填写
+```
+
+| 环境变量 | 说明 | 默认 |
+| --- | --- | --- |
+| `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` | SMTP 服务器与账号（QQ / 163 邮箱填**授权码**，不是登录密码） | 空（不启用） |
+| `ALERT_ENABLED` / `ALERT_TO` / `ALERT_FROM` | 告警开关 / 收件人（逗号分隔）/ 发件人（默认取 `MAIL_USERNAME`） | `false` / 空 |
+| `ALERT_THROTTLE_MINUTES` | 同一告警键的抑制窗口 | `10` |
+| `CONSISTENCY_ENABLED` / `CONSISTENCY_INTERVAL_MS` / `CONSISTENCY_INITIAL_DELAY_MS` | 定时巡检开关、间隔与首次延迟 | `false` / `300000` / `60000` |
+| `MARIADB_*` / `POSTGRES_*`（HOST/PORT/USER/PASSWORD） | 巡检目标库连接（targets 的库名固定为 `testdb`） | `localhost:3308` / `localhost:5432` |
+
+**验证**：启动后端后，用管理端账号登录拿 token，调用两接口（Knife4j 文档页可直接点点）：
+
+```powershell
+# 1. 测试告警链路（收到邮件即 SMTP 配置成功）
+curl.exe -s -X POST http://127.0.0.1:5000/api/manager/alert/test -H "token: <登录拿到的 token>"
+
+# 2. 手动巡检（对比源库与 MariaDB / PostgreSQL 行数）
+curl.exe -s -X POST http://127.0.0.1:5000/api/manager/alert/patrol -H "token: <登录拿到的 token>"
+```
+
+巡检返回示例（一致时为 `consistent: true`、`issues: []`）：
+
+```json
+{"status": 200, "data": {"consistent": false, "alert_sent": false, "issues": [
+  {"target": "MariaDB", "table": "oorder", "source_count": 358, "target_count": 300, "detail": "行数不一致"},
+  {"target": "PostgreSQL", "detail": "库不可达：Connection refused"}]}}
+```
+
+**设计要点**（面试可展开）：
+
+1. **节流**：以告警键（异常类名 / `consistency:<目标库>`）为粒度记录上次发送时间，用 `ConcurrentHashMap.compute` 保证"检查 + 记录"原子，窗口内只发第一封——防止数据库抖动引发"异常风暴"把邮箱打爆；
+2. **异步**：邮件走单线程守护线程池发送，SMTP 连接超时（可达数秒）不阻塞请求线程与巡检线程；
+3. **降级不报错**：未启用 / 未配置收件人 / SMTP 未配置 / 发送失败，全部只写日志并返回 `false`；
+4. **巡检双维度**：连接可达性（库不可达 / 表缺失）与行数一致性分开报告，且逐表容错——单表查询失败不中断整轮巡检；JDBC URL 带 `connectTimeout`，目标库没启动也能数秒内返回；
+5. **恢复通知**：上一轮异常、本轮恢复时发"已恢复"邮件，运维不必反复手动确认。
+
+测试覆盖：`AlertServiceImplTest`（6 个：降级 / 节流窗口 / 失败吞掉）、`ConsistencyCheckServiceImplTest`（5 个：一致 / 不一致 / 表缺失 / 库不可达 / 告警与恢复）、`ManagerAlertApiTest`（5 个接口契约，含 401 鉴权）。
 
 ## 说明
 
@@ -349,7 +412,7 @@ powershell -ExecutionPolicy Bypass -File backend-java\tools\build.ps1 -SkipTests
 
 ### 1. 接口契约（自动化测试）
 
-全部接口契约由 82 个用例覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
+全部接口契约由 98 个用例覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File backend-java\tools\build.ps1
@@ -521,17 +584,17 @@ Java 侧的三件事——**日期补零、小时补零、比率与日均计算*
 
 因为没有 DDL、没有 DML，统计接口**不可能触发** `wuliu_insert`、`order_insert_sale`、`order_delete_sale` 等触发器的副作用，也就不存在"看一眼报表把数据看变了"的风险。
 
-鉴权方面，本组接口是全项目**第一批**默认需要 token 的管理端接口：
+鉴权方面，统计看板与异常告警是全项目**仅有的**默认需要 token 的管理端接口：
 
 | 项 | 内容 |
 | --- | --- |
-| 拦截名单 | `WebMvcConfiguration.JWT_PATH_PATTERNS`（[L59-L67](backend-java/src/main/java/com/csu/takeout/config/WebMvcConfiguration.java#L59)） |
+| 拦截名单 | `WebMvcConfiguration.JWT_PATH_PATTERNS`（见源码常量注释） |
 | 6 条用户端 | `/api/user/addorder`、`/api/user/unsend`、`/api/user/sending`、`/api/user/sended`、`/api/user/usermsg`、`/api/user/pwd_chg`（需要登录态） |
-| 新增 1 条 | `/api/manager/stats/**`（L66）——覆盖全部 8 个统计接口，包括下钻 |
+| 新增 2 组 | `/api/manager/stats/**`（8 个统计接口，含下钻）与 `/api/manager/alert/**`（测试告警 / 手动巡检） |
 | 既有管理端接口 | 15 个映射：`shop` / `server` / `dispatcher` 各 3 个、`unsend` 2 个、`sending` / `sended` / `wuliu` 各 1 个，全部**不在名单内**，鉴权行为保持既有约定，未做任何改动 |
 | 校验失败响应 | 拦截器直接写 401 + `{"code": 1000, "msg": "用户未登录"}`（在拦截器内显式写出而不抛异常，原因见上文「JWT 实现细节」） |
-| 对现有前端的影响 | **零**：`api/index.js` 的请求拦截器（L12-L20）本来就在每个请求头带 `token`，此前只是既有接口不校验而已；统计接口开始校验后，前端一行都不用改，只是"带的 token 终于被用上了" |
-| 测试锁定 | `ManagerStatsApiTest#statsRequireToken`（401）与 `#existingManagerApiStillOpen`（不带 token 调 `/api/manager/shop` 仍 200） |
+| 对现有前端的影响 | **零**：`api/index.js` 的请求拦截器本就在每个请求头带 `token`，此前只是既有接口不校验而已；新接口开始校验后，前端一行都不用改，只是"带的 token 终于被用上了" |
+| 测试锁定 | `ManagerStatsApiTest#statsRequireToken`、`ManagerAlertApiTest#requiresToken`（401）与 `#existingManagerApiStillOpen`（不带 token 调 `/api/manager/shop` 仍 200） |
 
 ## 演示数据
 
