@@ -1,5 +1,6 @@
 package com.csu.takeout.service.impl;
 
+import com.csu.takeout.constant.RedisConstant;
 import com.csu.takeout.dto.OrderSubmitDTO;
 import com.csu.takeout.dto.OrderUpdateDTO;
 import com.csu.takeout.entity.Order;
@@ -9,6 +10,7 @@ import com.csu.takeout.vo.SendingOrderVO;
 import com.csu.takeout.vo.UnsendOrderVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +44,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = RedisConstant.STATS_CACHE, allEntries = true)
     public void addOrder(String consPhone, OrderSubmitDTO dto) {
         Order order = Order.builder()
                 .shopName(dto.getShopName())
@@ -86,6 +89,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = RedisConstant.STATS_CACHE, allEntries = true)
     public boolean deleteOrder(String consPhone, Integer orderId) {
         // 删除后的统计/销量回退由数据库触发器负责；归属校验同时避免了
         // 越权删除误减他人店铺的 m_sale_v 与 orderway.count。

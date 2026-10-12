@@ -1,5 +1,6 @@
 package com.csu.takeout.service.impl;
 
+import com.csu.takeout.constant.RedisConstant;
 import com.csu.takeout.dto.OrderDispatchDTO;
 import com.csu.takeout.entity.Wuliu;
 import com.csu.takeout.mapper.OrderMapper;
@@ -10,6 +11,7 @@ import com.csu.takeout.vo.ManagerUnsendOrderVO;
 import com.csu.takeout.vo.WuliuVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +48,7 @@ public class ManagerOrderServiceImpl implements ManagerOrderService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = RedisConstant.STATS_CACHE, allEntries = true)
     public void dispatch(OrderDispatchDTO dto) {
         // 与契约一致：先从订单表取出顾客手机号，再写入物流记录
         String consPhone = orderMapper.getConsPhoneByOrderId(dto.getOrderId());

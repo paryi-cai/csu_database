@@ -33,6 +33,10 @@ spring:
       port: ${REDIS_PORT:6379}
       database: 0
       timeout: 3000ms
+  cache:
+    # 管理端看板统计缓存：Spring Cache + Redis。
+    # TTL / 键值序列化 / 故障降级策略见 RedisConfiguration；测试 profile 覆盖为 simple（不连 Redis）。
+    type: redis
   mail:
     # SMTP：用于异常检测与告警邮件。默认留空 = 不启用；设置 MAIL_HOST 等环境变量后生效。
     # 常见配置（QQ 邮箱）：MAIL_HOST=smtp.qq.com、MAIL_PORT=465、MAIL_USERNAME=xxx@qq.com、

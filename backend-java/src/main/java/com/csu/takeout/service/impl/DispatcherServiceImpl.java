@@ -1,10 +1,12 @@
 package com.csu.takeout.service.impl;
 
+import com.csu.takeout.constant.RedisConstant;
 import com.csu.takeout.entity.Dispatcher;
 import com.csu.takeout.mapper.DispatcherMapper;
 import com.csu.takeout.service.DispatcherService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class DispatcherServiceImpl implements DispatcherService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = RedisConstant.STATS_CACHE, allEntries = true)
     public boolean add(String dispatcherId, String dispatcherName, String dispatcherPhone) {
         if (dispatcherMapper.countByDispatcherId(dispatcherId) > 0) {
             return false;
@@ -41,6 +44,7 @@ public class DispatcherServiceImpl implements DispatcherService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = RedisConstant.STATS_CACHE, allEntries = true)
     public void delete(String dispatcherId) {
         dispatcherMapper.deleteByDispatcherId(dispatcherId);
     }

@@ -22,6 +22,10 @@ spring:
       # 触发器等对象体内部含有分号，Spring 默认按分号切分语句会把它们截断；
       # 因此这两个测试脚本统一使用 @@ 作为语句分隔符。
       separator: "@@"
+  cache:
+    # 测试不连 Redis：用内存缓存（spring-context 自带 ConcurrentMapCacheManager），
+    # @Cacheable/@CacheEvict 仍会被真实执行，从而覆盖缓存注解与 key 拼接逻辑
+    type: simple
 
 # 测试环境不依赖 Redis（RedisAutoConfiguration 的连接是惰性的，不会被触发）
 csu:

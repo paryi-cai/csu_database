@@ -1,5 +1,6 @@
 package com.csu.takeout.service.impl;
 
+import com.csu.takeout.constant.RedisConstant;
 import com.csu.takeout.mapper.ManagerStatsMapper;
 import com.csu.takeout.service.ManagerStatsService;
 import com.csu.takeout.vo.DispatcherWorkloadVO;
@@ -12,6 +13,7 @@ import com.csu.takeout.vo.StatsOverviewVO;
 import com.csu.takeout.vo.StatsTrendVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,12 @@ import java.util.Map;
  *   <li><b>小时补零</b>：固定输出 0–23 共 24 个桶；</li>
  *   <li><b>比率计算</b>：占比、日均等在 Java 里算，避免 SQL 里出现除零风险。</li>
  * </ol>
+ *
+ * <p><b>缓存</b>：8 个只读方法全部 {@code @Cacheable} 到 Redis（缓存名 {@code stats}，
+ * key 按「接口 + 参数」拼接，如 {@code trend:7}）。写路径（下单 / 删单 / 派发 / 店铺与
+ * 配送员维护）以 {@code @CacheEvict(allEntries = true)} 主动失效，60 秒 TTL 兜底
+ * （触发器维护的销量 / 计数难以精确定位失效点，全量清空最稳）。缓存故障时由
+ * {@code LoggingCacheErrorHandler} 降级为直查数据库，不影响接口可用性。</p>
  */
 @Service
 @Slf4j
@@ -62,6 +70,7 @@ public class ManagerStatsServiceImpl implements ManagerStatsService {
     private final ManagerStatsMapper statsMapper;
 
     @Override
+    @Cacheable(cacheNames = RedisConstant.STATS_CACHE, key = "'overview'")
     public StatsOverviewVO overview() {
         OrderSumVO sums = statsMapper.sumOrders();
         return new StatsOverviewVO(
@@ -76,6 +85,7 @@ public class ManagerStatsServiceImpl implements ManagerStatsService {
     }
 
     @Override
+    @Cacheable(cacheNames = RedisConstant.STATS_CACHE, key = "'trend:' + #days")
     public StatsTrendVO trend(int days) {
         int range = clamp(days, MIN_DAYS, MAX_DAYS);
         LocalDate today = LocalDate.now();
@@ -84,6 +94,7 @@ public class ManagerStatsServiceImpl implements ManagerStatsService {
     }
 
     @Override
+    @Cacheable(cacheNames = RedisConstant.STATS_CACHE, key = "'shop-trend:' + #shopName + ':' + #days")
     public StatsTrendVO shopTrend(String shopName, int days) {
         if (shopName == null || shopName.isBlank()) {
             return null;
@@ -103,6 +114,7 @@ public class ManagerStatsServiceImpl implements ManagerStatsService {
     }
 
     @Override
+    @Cacheable(cacheNames = RedisConstant.STATS_CACHE, key = "'status'")
     public Map<String, Object> status() {
         Map<Integer, Long> counted = new LinkedHashMap<>();
         for (StatsCountVO row : statsMapper.listStatusCount()) {
@@ -128,6 +140,7 @@ public class ManagerStatsServiceImpl implements ManagerStatsService {
     }
 
     @Override
+    @Cacheable(cacheNames = RedisConstant.STATS_CACHE, key = "'shops:' + #limit + ':' + #metric")
     public Map<String, Object> shops(int limit, String metric) {
         String by = "count".equalsIgnoreCase(metric) ? "count" : "money";
         List<ShopRankVO> rows = statsMapper.listShopRank(clamp(limit, MIN_LIMIT, MAX_LIMIT), by);
@@ -145,6 +158,7 @@ public class ManagerStatsServiceImpl implements ManagerStatsService {
     }
 
     @Override
+    @Cacheable(cacheNames = RedisConstant.STATS_CACHE, key = "'order-way'")
     public Map<String, Object> orderWay() {
         List<StatsCountVO> rows = statsMapper.listOrderWay();
         long total = 0L;
@@ -169,11 +183,13 @@ public class ManagerStatsServiceImpl implements ManagerStatsService {
     }
 
     @Override
+    @Cacheable(cacheNames = RedisConstant.STATS_CACHE, key = "'dispatchers'")
     public List<DispatcherWorkloadVO> dispatchers() {
         return statsMapper.listDispatcherWorkload();
     }
 
     @Override
+    @Cacheable(cacheNames = RedisConstant.STATS_CACHE, key = "'hours'")
     public StatsHourVO hours() {
         Map<Integer, Long> counted = new LinkedHashMap<>();
         for (StatsCountVO row : statsMapper.listHourCount()) {
