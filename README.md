@@ -2,7 +2,7 @@
 
 一个基于 **MySQL + Spring Boot 3 + Vue 2** 的校园快餐订餐管理系统，实现用户订餐、订单流转、配送管理等功能，并演示了视图、触发器、外键等数据库特性，以及使用 DataX 将 MySQL 数据迁移至 MariaDB / PostgreSQL 的跨数据库实践。
 
-> 后端为 Spring Boot 3.4（`backend-java/`，配 98 个接口契约测试），前端为 Vue 2 单页应用（用户端 + 管理端数据看板）。
+> 后端为 Spring Boot 3.4（`backend-java/`，配 102 个接口契约测试），前端为 Vue 2 单页应用（用户端 + 管理端数据看板）。
 
 ## 功能特性
 
@@ -44,7 +44,7 @@ csu_database-master/
 │   │   ├── task/                     # 定时任务：数据一致性巡检（ConsistencyCheckTask）
 │   │   └── entity / dto / vo / result / handler / config / constant / properties / utils
 │   ├── src/main/resources/           # application.yml（默认 localhost:3307）+ mapper XML
-│   ├── src/test/                     # 98 个接口契约测试（H2 MySQL 兼容模式，无需 Docker）
+│   ├── src/test/                     # 102 个接口契约测试（H2 MySQL 兼容模式，无需 Docker）
 │   ├── tools/build.ps1               # 一键构建（用可写 Maven 仓库副本，受限环境可跑）
 │   ├── tools/verify-wait-probe.sh    # 验证「端口就绪探测」行为的辅助脚本
 │   ├── Dockerfile                    # 多阶段构建（maven → JRE 17）
@@ -245,7 +245,7 @@ curl.exe -s -X POST http://127.0.0.1:5000/api/manager/alert/patrol -H "token: <�
 4. **巡检双维度**：连接可达性（库不可达 / 表缺失）与行数一致性分开报告，且逐表容错——单表查询失败不中断整轮巡检；JDBC URL 带 `connectTimeout`，目标库没启动也能数秒内返回；
 5. **恢复通知**：上一轮异常、本轮恢复时发"已恢复"邮件，运维不必反复手动确认。
 
-测试覆盖：`AlertServiceImplTest`（6 个：降级 / 节流窗口 / 失败吞掉）、`ConsistencyCheckServiceImplTest`（5 个：一致 / 不一致 / 表缺失 / 库不可达 / 告警与恢复）、`ManagerAlertApiTest`（5 个接口契约，含 401 鉴权）。
+测试覆盖：`AlertServiceImplTest`（7 个：降级 / 节流窗口 / 失败吞掉 / 线程池关闭后安全丢弃）、`ConsistencyCheckServiceImplTest`（5 个：一致 / 不一致 / 表缺失 / 库不可达 / 告警与恢复）、`ConsistencyCheckTaskTest`（3 个：开关关闭 / 配置不完整跳过防"假绿" / 配置完整正常执行）、`ManagerAlertApiTest`（5 个接口契约，含 401 鉴权）。
 
 ## 说明
 
@@ -412,7 +412,7 @@ powershell -ExecutionPolicy Bypass -File backend-java\tools\build.ps1 -SkipTests
 
 ### 1. 接口契约（自动化测试）
 
-全部接口契约由 98 个用例覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
+全部接口契约由 102 个用例覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File backend-java\tools\build.ps1

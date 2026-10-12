@@ -460,12 +460,12 @@ SELECT shop_name, m_sale_v FROM fastfood_shop WHERE shop_name = '大美鸡公煲
 
 ## 第 8 章 接口契约测试
 
-全部接口契约由 `backend-java/src/test` 下的 **98 个用例**覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
+全部接口契约由 `backend-java/src/test` 下的 **102 个用例**覆盖（H2 MySQL 兼容模式，无需 MySQL / Docker）：
 
 - 响应体**原文**断言（空格排版、末尾换行、非 ASCII 转义、空数组）
 - JWT 载荷结构与短密钥签名（手工复算 HMAC 验证补零不改变结果）
 - 全部接口的端到端契约（401 / 框架级 404·405·400 / 空列表 / 越权归属校验等边界）
-- 异常告警与一致性巡检（降级 / 节流窗口 / 失败吞掉；一致 / 不一致 / 表缺失 / 库不可达 / 告警与恢复）
+- 异常告警与一致性巡检（降级 / 节流窗口 / 失败吞掉 / 线程池关闭后安全丢弃；一致 / 不一致 / 表缺失 / 库不可达 / 告警与恢复；定时任务配置门禁防"假绿"）
 
 ```powershell
 cd "D:\Desktop\面试\数据库项目\csu_database-master"

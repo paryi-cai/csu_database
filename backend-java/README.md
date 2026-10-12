@@ -1,7 +1,7 @@
 # backend-java — Spring Boot 3 后端（主后端）
 
 校园快餐订餐管理系统后端：Spring Boot 3.4.4 + MyBatis + Druid + Redis + JWT，
-提供用户端与管理员两组 REST 接口，配套 **98 个接口契约测试**（H2，无需 Docker）。
+提供用户端与管理员两组 REST 接口，配套 **102 个接口契约测试**（H2，无需 Docker）。
 
 ## 内容
 
@@ -13,7 +13,7 @@
   - `task/` — 定时任务（`ConsistencyCheckTask` 数据一致性巡检，默认关闭）
   - `entity/ dto/ vo/ result/ handler/ config/ constant/ properties/ utils`
 - `src/main/resources/` — `application.yml`（默认 `localhost:3307`）+ `mapper/*.xml`（SQL 全部在这里）
-- `src/test/` — **98 个接口契约测试**（H2 MySQL 兼容模式，无需 Docker / MySQL）
+- `src/test/` — **102 个接口契约测试**（H2 MySQL 兼容模式，无需 Docker / MySQL）
 - `tools/build.ps1` — 一键构建（受限环境自动使用可写 Maven 仓库副本）
 - `tools/verify-wait-probe.sh` — 验证「端口就绪探测」行为的辅助脚本
 - `Dockerfile` / `docker-compose.yml` — 多阶段构建（Maven → JRE 17）；MySQL 3307 / Redis 6379 / API 5000
