@@ -33,6 +33,22 @@ spring:
       port: ${REDIS_PORT:6379}
       database: 0
       timeout: 3000ms
+  mail:
+    # SMTP：用于异常检测与告警邮件。默认留空 = 不启用；设置 MAIL_HOST 等环境变量后生效。
+    # 常见配置（QQ 邮箱）：MAIL_HOST=smtp.qq.com、MAIL_PORT=465、MAIL_USERNAME=xxx@qq.com、
+    # MAIL_PASSWORD=SMTP 授权码；随后把 ALERT_ENABLED 设为 true、ALERT_TO 设为收件人。
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: ${MAIL_SMTP_SSL:true}
+      mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS:false}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
@@ -65,11 +81,55 @@ logging:
 
 csu:
   jwt:
-    # JWT 签名密钥与 既有接口默认值保持一致（生产请用环境变量 JWT_SECRET 覆盖）
+    # JWT 签名密钥（默认值；生产请用环境变量 JWT_SECRET 覆盖）
     secret-key: ${JWT_SECRET:12asdffa2323}
-    # 过期时间：24 小时（与既有契约 的 days=1 一致）
+    # 过期时间：24 小时（86400000 毫秒）
     ttl: 86400000
     # 前端在自定义请求头 token 中传递 JWT（不是 Authorization: Bearer）
     token-name: token
-    # 签发者，解析时强校验（解析时强校验）
+    # 签发者，解析时强校验
     issuer: wufang
+  alert:
+    # 异常告警（默认关闭）：开启前请先配置 spring.mail.* / MAIL_* 环境变量
+    enabled: ${ALERT_ENABLED:false}
+    # 发件人；留空时取 MAIL_USERNAME
+    from: ${ALERT_FROM:}
+    # 收件人，逗号分隔多个
+    to: ${ALERT_TO:}
+    # 同一告警键的抑制窗口（分钟），防止异常风暴把邮箱打爆
+    throttle-minutes: ${ALERT_THROTTLE_MINUTES:10}
+    # 邮件主题前缀
+    subject-prefix: "[校园快餐系统]"
+  consistency:
+    # 数据一致性定时巡检（默认关闭）：目标库只在跨库迁移演示时启动，
+    # 手动巡检接口 POST /api/manager/alert/patrol 不受该开关限制。
+    enabled: ${CONSISTENCY_ENABLED:false}
+    # 巡检间隔（毫秒）与首次执行延迟
+    interval-ms: ${CONSISTENCY_INTERVAL_MS:300000}
+    initial-delay-ms: ${CONSISTENCY_INITIAL_DELAY_MS:60000}
+    # 源库（业务 MySQL，连接参数与数据源保持一致）
+    source:
+      name: MySQL(源库)
+      url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${DB_NAME:caimingxuan}?connectTimeout=3000&socketTimeout=5000&useSSL=false
+      username: ${DB_USER:root}
+      password: ${DB_PASSWORD:123456}
+    # 目标库（DataX 迁移结果）；容器部署时用 MARIADB_HOST / POSTGRES_HOST 指向宿主机
+    targets:
+      - name: MariaDB
+        url: jdbc:mysql://${MARIADB_HOST:localhost}:${MARIADB_PORT:3308}/testdb?connectTimeout=3000&socketTimeout=5000&useSSL=false
+        username: ${MARIADB_USER:root}
+        password: ${MARIADB_PASSWORD:123456}
+      - name: PostgreSQL
+        url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/testdb?connectTimeout=3&socketTimeout=5&sslmode=disable
+        username: ${POSTGRES_USER:admin}
+        password: ${POSTGRES_PASSWORD:123456}
+    # 参与比对的表（与 DataX 任务覆盖的 8 张表一致）
+    tables:
+      - user
+      - user_msg
+      - fastfood_shop
+      - oorder
+      - orderway
+      - server
+      - dispatcher
+      - wuliu

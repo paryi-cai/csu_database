@@ -30,6 +30,23 @@ csu:
     ttl: 86400000
     token-name: token
     issuer: wufang
+  alert:
+    # 测试环境不发送真实邮件：未启用时 alertNow/alert 都只写日志，便于断言业务失败响应
+    enabled: false
+  consistency:
+    # 巡检改为两个固定的 H2 内存库（由 ManagerAlertApiTest 自行建表/清表），
+    # 从而不依赖 Docker / MySQL / MariaDB / PostgreSQL，结果完全确定
+    source:
+      name: H2Source
+      url: jdbc:h2:mem:consistency_src;DB_CLOSE_DELAY=-1
+      username: sa
+      password: ""
+    targets:
+      - name: H2Target
+        url: jdbc:h2:mem:consistency_tgt;DB_CLOSE_DELAY=-1
+        username: sa
+        password: ""
+    tables: [probe]
 
 logging:
   level:

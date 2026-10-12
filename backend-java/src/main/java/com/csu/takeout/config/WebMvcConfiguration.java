@@ -49,11 +49,11 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
 
     /**
      * 需要 JWT 校验的接口（需要登录态的用户端接口）。
-     * 登录、店铺列表以及<b>既有</b>管理端接口在 既有接口中没有做令牌校验，此处保持一致。
+     * 登录、店铺列表以及<b>既有</b>管理端接口没有做令牌校验，此处保持一致。
      *
-     * <p>数据统计接口（/api/manager/stats/**）是本项目新增的功能，不属于"既有接口"，
-     * 因此按新增功能的要求纳入校验：只有携带合法 token 的请求才能读取经营数据。
-     * 前端所有请求都会自动带上 token，因此对现有页面零影响；
+     * <p>数据统计（/api/manager/stats/**）与异常告警（/api/manager/alert/**）是本项目
+     * 新增的功能，不属于"既有接口"，因此按新增功能的要求纳入校验：只有携带合法 token
+     * 的请求才能访问。前端所有请求都会自动带上 token，因此对现有页面零影响；
      * 越权访问返回 401 + {@code {"code":1000,"msg":"用户未登录"}}。</p>
      */
     private static final String[] JWT_PATH_PATTERNS = {
@@ -64,7 +64,8 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
             "/api/user/usermsg",
             "/api/user/usermsg/**",
             "/api/user/pwd_chg",
-            "/api/manager/stats/**"
+            "/api/manager/stats/**",
+            "/api/manager/alert/**"
     };
 
     /**
@@ -77,7 +78,7 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * 跨域配置：等价于 跨域直连，允许前端（localhost:8080）直连本服务
+     * 跨域配置：允许前端（localhost:8080）直连本服务
      */
     @Bean
     public CorsFilter corsFilter() {

@@ -5,6 +5,8 @@ import com.csu.takeout.exception.BaseException;
 import com.csu.takeout.exception.UnauthorizedException;
 import com.csu.takeout.result.Result;
 import com.csu.takeout.result.TableResult;
+import com.csu.takeout.service.AlertService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
@@ -19,6 +21,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.SQLIntegrityConstraintViolationException;
 
 /**
@@ -40,7 +44,10 @@ import java.sql.SQLIntegrityConstraintViolationException;
  */
 @RestControllerAdvice
 @Slf4j
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final AlertService alertService;
 
     /**
      * 未登录 / 令牌非法：返回 HTTP 401。
@@ -174,12 +181,35 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 兜底异常处理，避免向前端返回 HTML 错误页
+     * 兜底异常处理，避免向前端返回 HTML 错误页。
+     *
+     * <p>未预期的系统异常会触发<b>告警邮件</b>（带节流，同一异常类在窗口内只发一封）；
+     * 业务异常（{@link BaseException}）、重复键、完整性约束等有明确语义的异常
+     * 不会告警，避免把正常业务分支当故障报。响应体本身不受告警影响。</p>
      */
     @ExceptionHandler
     public TableResult<Void> exceptionHandler(Exception ex) {
         log.error("系统异常", ex);
+        alertService.alert("unexpected:" + ex.getClass().getName(), "未预期系统异常：" + ex.getClass().getSimpleName(),
+                buildAlertContent(ex));
         return TableResult.error(MessageConstant.UNKNOWN_ERROR);
+    }
+
+    /** 告警正文：异常摘要 + 调用栈前 15 行（足够定位又不至于刷屏） */
+    private String buildAlertContent(Exception ex) {
+        StringWriter writer = new StringWriter();
+        ex.printStackTrace(new PrintWriter(writer));
+        String[] lines = writer.toString().split("\\R");
+        StringBuilder content = new StringBuilder();
+        content.append(ex).append("\n\n");
+        int limit = Math.min(lines.length, 15);
+        for (int i = 0; i < limit; i++) {
+            content.append(lines[i]).append('\n');
+        }
+        if (lines.length > limit) {
+            content.append("...（完整堆栈见后端日志）");
+        }
+        return content.toString();
     }
 
     /**

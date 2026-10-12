@@ -55,6 +55,12 @@ public class MessageConstant {
     /** 数据统计：店铺下钻时店铺名不存在 */
     public static final String SHOP_NOT_FOUND = "该店铺不存在";
 
+    /** 异常告警：测试邮件已发送 */
+    public static final String ALERT_TEST_SENT = "测试告警已发送";
+
+    /** 异常告警：未启用或发送失败（含 SMTP 未配置） */
+    public static final String ALERT_NOT_SENT = "告警未启用或发送失败：请检查 csu.alert.* 与 spring.mail.* 配置";
+
     public static final String USER_NOT_LOGIN = "用户未登录";
     public static final String UNKNOWN_ERROR = "未知错误";
 }
